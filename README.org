@@ -1,0 +1,35 @@
+* org-extra-complete
+
+Completion with annotations for *org-mode.*
+
+** Installation
+
+*** Manually
+
+Download repository and it to your load path in your init file:
+
+#+begin_src elisp :eval no
+
+(add-to-list 'load-path "/path/to/org-extra-complete/")
+
+(require 'org-extra-complete)
+
+#+end_src
+
+*** With use-package and straight
+
+#+begin_src elisp :eval no
+
+(use-package org-extra-complete
+  :straight (:repo "KarimAziev/org-extra-complete" :type git :host github)
+  :commands (org-extra-complete org-extra-complete-src-headers-args))
+
+#+end_src
+
+** Commands
+
++ ~org-extra-complete~
+Main command. Complete org keywords and values.
+
++ ~org-extra-complete-src-headers-args~
+Complete a header argument selecting from lists of common args and values.
