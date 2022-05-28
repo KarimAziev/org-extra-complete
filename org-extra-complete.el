@@ -428,7 +428,7 @@ Return string with label and url, divided with space."
 
 (defvar org-extra-complete-mode-buffer-options-pl
   `((:id "|" :var "org-export-with-tables"
-         :description "toggle ~(org-export-with-tables)~"
+         :description "toggle ~org-export-with-tables~"
          :value boolean)
     (:id "html-style" :description "toggle ~org-html-head-include-default-style~" :value boolean)
     (:id "todo" :var "org-export-with-todo-keywords"
