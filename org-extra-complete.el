@@ -222,7 +222,7 @@ X can be any object."
         (when new
           (setcdr last new)
           (setq last (cdr new)))))
-    (apply 'propertize string (cdr result))))
+    (apply #'propertize string (cdr result))))
 
 (defun org-extra-complete-insert (item &optional separator)
   "Insert or complete ITEM and SEPARATOR.
@@ -238,7 +238,7 @@ Default value of SEPARATOR is space."
                     (list (substring-no-properties item (length current-word)))
                   (list (or separator "\s") item)))
             (list item)))
-    (apply 'insert parts)))
+    (apply #'insert parts)))
 
 (defun org-extra-complete-plist-pick (keywords plist)
   "Pick KEYWORDS from PLIST without nil."
@@ -288,8 +288,8 @@ Default value of SEPARATOR is space."
    "wrap\s"
    (append
     '("example" "src")
-    (mapcar (apply-partially 'format "src %s")
-            (mapcar 'car org-babel-load-languages)))))
+    (mapcar (apply-partially #'format "src %s")
+            (mapcar #'car org-babel-load-languages)))))
 
 (defun org-extra-complete-read-variable ()
   "Read value for :var."
@@ -303,7 +303,7 @@ Default value of SEPARATOR is space."
   "Read language with completion from `org-babel-load-languages'."
   (let ((langs (delete-dups
                 (append
-                 (mapcar 'car org-babel-load-languages)
+                 (mapcar #'car org-babel-load-languages)
                  (mapcar (lambda (it) (car (reverse it)))
                          (cdr (nth 1 (memq :key-type
                                            (get 'org-babel-load-languages
@@ -596,7 +596,7 @@ Return string with label and url, divided with space."
           (:id "output" :description "Everything printed to stdout" :group 3)
           (:id "value" :description "Value of the last statement" :group 3)))
     (:id "-n" :description "Get the lines of the example numbered"
-         :sublist ,(apply-partially 'read-string "Line: "))
+         :sublist ,(apply-partially #'read-string "Line: "))
     (:id "+n" :description "the numbering from the previous numbered snippet"
          :sublist (lambda () (read-string "Line: ")))
     (:id "-r" :description "hide reference labels")
@@ -654,7 +654,7 @@ Return string with label and url, divided with space."
     (:id ":noweb-ref" :description "Specifies block's noweb reference resolution target")
     (:id ":noweb-sep" :description "Specifies the string to use to separate accumulated noweb references")
     (:id ":output-dir" :description "If ‘output-dir’ is not specified, Org assumes it is the current directory"
-         :sublist ,(apply-partially 'read-directory-name "Output directory:\s"))
+         :sublist ,(apply-partially #'read-directory-name "Output directory:\s"))
     (:id ":post" :description "*Post-processes* the *results* of a code block")
     (:id ":mkdirp" :description "Toggles creation of parent directories of target files during tangling"
          :sublist ((:id "yes")
@@ -797,7 +797,7 @@ Return string with label and url, divided with space."
     (:id "DESCRIPTION" :description "A HTML meta tag in the HTML file" :value string)
     (:id "HTML_DOCTYPE" :description "Specify the document type, for example: HTML5."
          :sublist (,(when (boundp 'org-html-doctype-alist)
-                      (mapcar 'car (when org-html-doctype-alist)))))
+                      (mapcar #'car (when org-html-doctype-alist)))))
     (:id "HTML_CONTAINER" :description "HTML container for wrapping sections and elements (~org-html-container-element~)"
          :sublist ("article" "aside"
                    "audio" "canvas" "details"
@@ -951,7 +951,7 @@ Return the results of all forms as a list."
        (if (stringp pl)
            pl
          (let*
-             ((keywords (seq-filter 'keywordp pl))
+             ((keywords (seq-filter #'keywordp pl))
               (id (or (plist-get pl :id)
                       (if (member :value keywords)
                           (org-extra-complete-stringify
@@ -970,7 +970,7 @@ Return the results of all forms as a list."
               (rest (org-extra-complete-plist-pick
                      (seq-difference keywords '(:value :sublist :id))
                      pl)))
-           (setq item (apply 'org-extra-complete-add-props id rest))
+           (setq item (apply #'org-extra-complete-add-props id rest))
            (pcase (plist-get pl :value)
              ('boolean (cons item `("t" "nil")))
              ('string
@@ -1064,7 +1064,7 @@ If ITEM is string, return it."
                                    (symbol-value sym))))))
                (setq value (if (listp value)
                                (setq value (mapconcat
-                                            (apply-partially 'format "%s")
+                                            (apply-partially #'format "%s")
                                             (flatten-list value)
                                             "\s"))
                              (format "%s" value)))
@@ -1213,7 +1213,7 @@ Default value for separator is `:\s'."
       (when-let* ((prefix (match-string-no-properties 0))
                   (value (all-completions
                           prefix (mapcar
-                                  'car
+                                  #'car
                                   org-extra-complete-completion-collection)))
                   (val (if (> (length value) 1)
                            (org-extra-complete-completing-read
