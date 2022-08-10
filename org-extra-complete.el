@@ -41,6 +41,30 @@
 (require 'ox)
 (require 'ox-html)
 
+(declare-function imenu--make-index-alist "imenu")
+(defvar imenu--index-alist)
+
+(defun org-extra-complete-move-with (fn &optional n)
+  "Move by calling FN N times.
+Return new position if changed, nil otherwise."
+  (unless n (setq n 1))
+  (when-let ((str-start (nth 8 (syntax-ppss (point)))))
+    (goto-char str-start))
+  (let ((init-pos (point))
+        (pos)
+        (count n))
+    (while (and (not (= count 0))
+                (when-let ((end (ignore-errors
+                                  (funcall fn)
+                                  (point))))
+                  (unless (= end (or pos init-pos))
+                    (setq pos end))))
+      (setq count (1- count)))
+    (if (= count 0)
+        pos
+      (goto-char init-pos)
+      nil)))
+
 (defun org-extra-complete-bounds-by-chars (chars)
   "Return bounds of thing at point if it is match CHARS.
 CHARS is like the inside of a [...] in a regular expression
@@ -828,12 +852,107 @@ Return string with label and url, divided with space."
          (,@org-extra-complete-mode-buffer-options-pl)
          :description "Compact form of export options")))
 
+(defun org-extra-complete-forward-org-keywords (&optional n)
+  "Move lines begins with org keyword forward or backward if N is negative."
+  (interactive "P")
+  (beginning-of-line)
+  (while (looking-at "#+")
+    (forward-line (if n -1 1))))
+
+(defun org-extra-complete-elisp-unquote (exp)
+  "Return EXP unquoted."
+  (declare (pure t) (side-effect-free t))
+  (while (memq (car-safe exp) '(quote function))
+    (setq exp (cadr exp)))
+  exp)
+
+(defun org-extra-complete-elisp-src-name ()
+  "Jump to place where to insert new definition."
+  (goto-char (point-min))
+  (org-extra-complete-move-with 'forward-sexp)
+  (org-extra-complete-move-with 'backward-list)
+  (let ((prev-pos))
+    (while (and (or (null prev-pos)
+                    (< prev-pos (point)))
+                (when-let ((sexp (sexp-at-point)))
+                  (and
+                   (listp sexp)
+                   (memq (car sexp)
+                         '(eval-and-compile
+                            require
+                            eval-when-compile
+                            declare-function)))))
+      (setq prev-pos (progn
+                       (org-extra-complete-move-with 'forward-sexp 2)
+                       (org-extra-complete-move-with 'backward-list)))))
+  (when-let ((sexp (sexp-at-point)))
+    (when (and
+           (listp sexp)
+           (memq (car sexp)
+                 '(eval-and-compile
+                    require
+                    eval-when-compile
+                    declare-function)))
+      (org-extra-complete-move-with 'forward-sexp 2))
+    (if (memq (car sexp)
+              '(defun defmacro defsubst define-inline define-advice defadvice
+                      define-skeleton define-compilation-mode define-minor-mode
+                      define-global-minor-mode define-globalized-minor-mode
+                      define-derived-mode define-generic-mode ert-deftest
+                      cl-defun cl-defsubst cl-defmacro cl-define-compiler-macro
+                      cl-defgeneric cl-defmethod define-compiler-macro
+                      define-modify-macro defsetf define-setf-expander
+                      define-method-combination defalias cl-flet defun-ivy-read
+                      defhydra defgeneric defmethod defun-ivy+ defgroup deftheme
+                      define-widget define-error defface cl-deftype cl-defstruct
+                      deftype defstruct define-condition defpackage defclass))
+        (when (symbolp (nth 1 sexp))
+          (org-extra-complete-elisp-unquote (car (flatten-list (seq-drop sexp 1))))))))
+
+(defun org-extra-complete-name ()
+  "Complete name for src block."
+  (let ((suggestion (save-excursion
+                      (when (looking-at "[\s\t]?+\n#\\+")
+                        (forward-line)
+                        (org-extra-complete-forward-org-keywords)
+                        (when-let*
+                            ((params (org-extra-complete-src-block-params))
+                             (src-mode (org-src-get-lang-mode (car params)))
+                             (code (buffer-substring-no-properties (nth 1 params)
+                                                                   (nth 2 params))))
+                          (with-temp-buffer
+                            (require 'imenu)
+                            (save-excursion
+                              (funcall src-mode)
+                              (insert code)
+                              (let ((re (org-babel-noweb-wrap)))
+                                (while (re-search-backward re nil t 1)
+                                  (let ((beg (match-beginning 0))
+                                        (end (match-end 0)))
+                                    (delete-region beg end))))
+                              (let ((extra
+                                     (progn
+                                       (pcase src-mode
+                                         ('emacs-lisp-mode
+                                          (when-let ((sym
+                                                      (org-extra-complete-elisp-src-name)))
+                                            (when (symbolp sym)
+                                              (symbol-name sym))))))))
+                                (imenu--make-index-alist t)
+                                (if (and imenu--index-alist
+                                         extra)
+                                    (append (list extra) imenu--index-alist)
+                                  (or imenu--index-alist extra))))))))))
+    (if (and suggestion (listp suggestion))
+        (completing-read "NAME\s" suggestion)
+      (read-string "NAME\s" suggestion))))
+
 (defvar org-extra-complete-mode-completions-misc-plist
   `((:id "html" :description "html block"
          :sublist (lambda () (read-string "Html")))
     (:id "caption" :description "Caption"
          :sublist (lambda () (read-string "CAPTION")))
-    (:id "name" :description "Name" :sublist (lambda () (read-string "NAME\s")))
+    (:id "name" :description "Name" :sublist org-extra-complete-name)
     (:id "call" :description "Call" :sublist org-extra-complete-call)
     (:id "(ref)" :description "Ref" :sublist org-extra-complete-insert-ref-link)
     (:id "include" :description "Include content of file"
