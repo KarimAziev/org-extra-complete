@@ -593,109 +593,253 @@ Return string with label and url, divided with space."
          :value boolean)))
 
 (defvar org-extra-complete-src-headers-args-plist
-  `((:id ":results" :description "Get the lines of the example numbered"
+  `((:id ":results"
+         :description "Get the lines of the example numbered"
          :multi t
          :sublist
-         ((:id "file" :description
-               "Name of the file to which output should be written" :group 0)
-          (:id "list" :description "Writes an Org mode list" :group 0)
-          (:id "vector" :description "The same as :results table" :group 0)
-          (:id "table" :description "Interprets the results as an Org mode table" :group 0)
-          (:id "scalar" :description "the same as :results verbatim" :group 0)
-          (:id "verbatim" :description "A string to inhibit interpretation as a value" :group 0)
-          (:id "raw" :description "Output is a string so hline processing is not performed" :group 1)
-          (:id "html" :description "Results are added inside of a #+BEGIN_EXPORT HTML block" :group 1)
-          (:id "latex" :description "The same as :wrap LaTeX" :group 1)
-          (:id "org" :description "Wraps raw results in a #+begin_src org block (dead data,comma-escaped lines)" :group 1)
-          (:id "code" :description "This will be exported as <LANG> code block (as verbatim or listings to LaTeX)." :group 1)
-          (:id "pp" :description "Prints data. Puts the output in an EXAMPLE block? XX" :group 1)
-          (:id "drawer" :description "Wraps code block results in a RESULTS drawer" :group 1)
-          (:id "link" :description "Wraps code block results in a link" :group 1)
-          (:id "graphics" :description "Wraps code block results in a graphics" :group 1)
-          (:id "replace" :description "Inserts results after the code block, replacing any previously inserted results" :group 2)
-          (:id "silent" :description "Echoes the results only in the minibuffer" :group 2)
-          (:id "none" :description "No the results, even for the minibuffer" :group 2)
-          (:id "append" :description "Builds new results onto existing results" :group 2)
-          (:id "prepend" :description "Puts new results before the existing results" :group 2)
-          (:id "output" :description "Everything printed to stdout" :group 3)
-          (:id "value" :description "Value of the last statement" :group 3)))
-    (:id "-n" :description "Get the lines of the example numbered"
+         ((:id "file"
+               :description
+               "Name of the file to which output should be written"
+               :group 0)
+          (:id "list"
+               :description "Writes an Org mode list"
+               :group 0)
+          (:id "vector"
+               :description "The same as :results table"
+               :group 0)
+          (:id "table"
+               :description "Interprets the results as an Org mode table"
+               :group 0)
+          (:id "scalar"
+               :description "the same as :results verbatim"
+               :group 0)
+          (:id "verbatim"
+               :description "A string to inhibit interpretation as a value"
+               :group 0)
+          (:id "raw"
+               :description
+               "Output is a string so hline processing is not performed"
+               :group 1)
+          (:id "html"
+               :description
+               "Results are added inside of a #+BEGIN_EXPORT HTML block"
+               :group 1)
+          (:id "latex"
+               :description "The same as :wrap LaTeX"
+               :group 1)
+          (:id "org"
+               :description
+               "Wraps raw results in a #+begin_src org block (dead data,comma-escaped lines)"
+               :group 1)
+          (:id "code"
+               :description
+               "This will be exported as <LANG> code block (as verbatim or listings to LaTeX)."
+               :group 1)
+          (:id "pp"
+               :description
+               "Prints data. Puts the output in an EXAMPLE block? XX"
+               :group 1)
+          (:id "drawer"
+               :description "Wraps code block results in a RESULTS drawer"
+               :group 1)
+          (:id "link"
+               :description "Wraps code block results in a link"
+               :group 1)
+          (:id "graphics"
+               :description "Wraps code block results in a graphics"
+               :group 1)
+          (:id "replace"
+               :description
+               "Inserts results after the code block, replacing any previously inserted results"
+               :group 2)
+          (:id "silent"
+               :description "Echoes the results only in the minibuffer"
+               :group 2)
+          (:id "none"
+               :description "No the results, even for the minibuffer"
+               :group 2)
+          (:id "append"
+               :description "Builds new results onto existing results"
+               :group 2)
+          (:id "prepend"
+               :description "Puts new results before the existing results"
+               :group 2)
+          (:id "output"
+               :description "Everything printed to stdout"
+               :group 3)
+          (:id "value"
+               :description "Value of the last statement"
+               :group 3)))
+    (:id "-n"
+         :description "Get the lines of the example numbered"
          :sublist ,(apply-partially #'read-string "Line: "))
-    (:id "+n" :description "the numbering from the previous numbered snippet"
-         :sublist (lambda () (read-string "Line: ")))
-    (:id "-r" :description "hide reference labels")
-    (:id ":cache"	:sublist
+    (:id "+n"
+         :description "the numbering from the previous numbered snippet"
+         :sublist (lambda ()
+                    (read-string "Line: ")))
+    (:id "-r"
+         :description "hide reference labels")
+    (:id ":cache"
+         :sublist
          ((:id "no")
           (:id "yes")))
-    (:id ":colnames" :description "Handles column names in tables"
-         :sublist ((:id "no" :description "Don't strip the header. Does not pre-process column names at all")
-                   (:id "yes" :description "Tells Org Babel that your first row contains column names")
-                   (:id "nil" :description "Default names")
-                   (:id "'()" :description "Specifies to use LIST as column names")))
-    (:id ":comments" :description "insertion of extra comments into the tangled files"
-         :sublist ((:id "no") (:id "link")
-                   (:id "yes") (:id "org")
-                   (:id "both") (:id "noweb")))
-    (:id ":eval" :description "Specifies permissions for every execution of code blocks"
-         :sublist ((:id "yes" :descsription "evaluate the source code")
-                   (:id "no" :descsription "never evaluate the source code")
-                   (:id "no-export" :description "Org does not evaluate the source code when exporting, yet the user can evaluate it interactively")
-                   (:id "query-export" :description "Org prompts the user for permission to evaluate the source code during export")
-                   (:id "query" :description "(~org-confirm-babel-evaluate~) - confirm before evaluating both interactively and during export")))
-    (:id ":exports" :description "Specifies how code and/or results should be handled during export"
-         :sublist ((:id "code" :description "Includes the body of the code block into the exported file")
-                   (:id "results" :description "Includes the results block in the exported file")
-                   (:id "both" :description "Includes both the results block in the exported file")))
-    (:id ":hlines" :description "Handles horizontal lines in input tables"
+    (:id ":colnames"
+         :description "Handles column names in tables"
+         :sublist ((:id "no"
+                        :description
+                        "Don't strip the header. Does not pre-process column names at all")
+                   (:id "yes"
+                        :description
+                        "Tells Org Babel that your first row contains column names")
+                   (:id "nil"
+                        :description "Default names")
+                   (:id "'()"
+                        :description "Specifies to use LIST as column names")))
+    (:id ":comments"
+         :description "insertion of extra comments into the tangled files"
+         :sublist ((:id "no")
+                   (:id "link")
+                   (:id "yes")
+                   (:id "org")
+                   (:id "both")
+                   (:id "noweb")))
+    (:id ":eval"
+         :description "Specifies permissions for every execution of code blocks"
          :sublist
-         ((:id "no" :description "Strips horizontal lines from the input table")
-          (:id "yes" :description "Preserves horizontal lines in the input table")))
-    (:id ":mkdirp" :description "Toggles creation of parent directories of target files during tangling"
+         ((:id "yes"
+               :descsription "evaluate the source code")
+          (:id "no"
+               :descsription "never evaluate the source code")
+          (:id "no-export"
+               :description
+               "Org does not evaluate the source code when exporting, yet the user can evaluate it interactively")
+          (:id "query-export"
+               :description
+               "Org prompts the user for permission to evaluate the source code during export")
+          (:id "query"
+               :description
+               "(~org-confirm-babel-evaluate~) - confirm before evaluating both interactively and during export")))
+    (:id ":exports"
+         :description
+         "Specifies how code and/or results should be handled during export"
+         :sublist ((:id "code"
+                        :description
+                        "Includes the body of the code block into the exported file")
+                   (:id "results"
+                        :description
+                        "Includes the results block in the exported file")
+                   (:id "both"
+                        :description
+                        "Includes both the results block in the exported file")))
+    (:id ":hlines"
+         :description "Handles horizontal lines in input tables"
+         :sublist
+         ((:id "no"
+               :description "Strips horizontal lines from the input table")
+          (:id "yes"
+               :description "Preserves horizontal lines in the input table")))
+    (:id ":mkdirp"
+         :description
+         "Toggles creation of parent directories of target files during tangling"
          :sublist ((:id "yes")
                    (:id "no")))
-    (:id ":padline" :description "Controls insertion of padding lines in tangled code files"
-         :sublist ((:id "yes" :description "default")
-                   (:id "no" :description "Gets rid of the first blank line preceding tangled output")))
-    (:id ":noweb" :description "Specifies when expansion of noweb style references should occur"
-         :sublist ((:id "no" :description "No expand")
-                   (:id "yes" :description "during both tangling and evaluation")
-                   (:id "tangle" :description "only during tangling")
-                   (:id "no-export" :description "during tangling and interactive evaluation")
-                   (:id "strip-export" :description "Expands before the block is tangled or evaluated but strip on export")
-                   (:id "eval" :description "before evaluating")))
-    (:id ":rownames" :description "Handles row names in tables"
-         :sublist ((:id "yes" "Tells Org that your first column contains row names")
+    (:id ":padline"
+         :description
+         "Controls insertion of padding lines in tangled code files"
+         :sublist
+         ((:id "yes"
+               :description "default")
+          (:id "no"
+               :description
+               "Gets rid of the first blank line preceding tangled output")))
+    (:id ":noweb"
+         :description
+         "Specifies when expansion of noweb style references should occur"
+         :sublist ((:id "no"
+                        :description "No expand")
+                   (:id "yes"
+                        :description "during both tangling and evaluation")
+                   (:id "tangle"
+                        :description "only during tangling")
+                   (:id "no-export"
+                        :description
+                        "during tangling and interactive evaluation")
+                   (:id "strip-export"
+                        :description
+                        "Expands before the block is tangled or evaluated but strip on export")
+                   (:id "eval"
+                        :description "before evaluating")))
+    (:id ":rownames"
+         :description "Handles row names in tables"
+         :sublist ((:id "yes"
+                        "Tells Org that your first column contains row names")
                    (:id "no" "No rownames")))
-    (:id ":tangle" :description "Toggles tangling and specify file name"
+    (:id ":tangle"
+         :description "Toggles tangling and specify file name"
          :sublist ((:id "tangle")
                    (:id "yes")
                    (:id "no")))
-    (:id ":tangle-mode" :description "what permissions to set for tangled files"
+    (:id ":tangle-mode"
+         :description "what permissions to set for tangled files"
          :sublist org-extra-complete-read-tangle-mode-permissions)
-    (:id ":cmdline" :description "For shell, this allows to make the code inside a Babel code block similar to a real shell script")
-    (:id ":no-expand" :description "Turns off the code blocks expansion during tangling")
-    (:id ":noeval" :description "Is the same as ~:eval no~")
-    (:id ":noweb-ref" :description "Specifies block's noweb reference resolution target")
-    (:id ":noweb-sep" :description "Specifies the string to use to separate accumulated noweb references")
-    (:id ":output-dir" :description "If ‘output-dir’ is not specified, Org assumes it is the current directory"
+    (:id ":cmdline"
+         :description
+         "For shell, this allows to make the code inside a Babel code block similar to a real shell script")
+    (:id ":no-expand"
+         :description "Turns off the code blocks expansion during tangling")
+    (:id ":noeval"
+         :description "Is the same as ~:eval no~")
+    (:id ":noweb-ref"
+         :description "Specifies block's noweb reference resolution target")
+    (:id ":noweb-prefix"
+         :description
+         "Prevent the prefix characters from being repeated when expanding a multiline noweb reference"
+         :sublist ("no" "yes" "default"))
+    (:id ":noweb-sep"
+         :description
+         "Specifies the string to use to separate accumulated noweb references"
          :sublist ,(apply-partially #'read-directory-name "Output directory:\s"))
-    (:id ":post" :description "*Post-processes* the *results* of a code block")
-    (:id ":mkdirp" :description "Toggles creation of parent directories of target files during tangling"
+    (:id ":output-dir"
+         :description
+         "If ‘output-dir’ is not specified, Org assumes it is the current directory"
+         :sublist ,(apply-partially #'read-directory-name "Output directory:\s"))
+    (:id ":post"
+         :description "*Post-processes* the *results* of a code block")
+    (:id ":mkdirp"
+         :description
+         "Toggles creation of parent directories of target files during tangling"
          :sublist ((:id "yes")
                    (:id "no")))
-    (:id ":prologue" :description "Prepends text to code block body")
-    (:id ":sep" :description "Specifies a delimiter for reading or writing tabular results")
-    (:id ":session" :description "Shares data and persists state between (evaluation of) different code blocks")
-    (:id ":shebang" :description "Make executable"
+    (:id ":prologue"
+         :description "Prepends text to code block body")
+    (:id ":sep"
+         :description
+         "Specifies a delimiter for reading or writing tabular results")
+    (:id ":session"
+         :description
+         "Shares data and persists state between (evaluation of) different code blocks")
+    (:id ":shebang"
+         :description "Make executable"
          :sublist ((:id "#!/bin/bash")
                    (:id "#!/usr/bin/env node")))
-    (:id ":var" :description "*Passes arguments* to code blocks" :sublist org-extra-complete-read-variable)
-    (:id ":wrap" :description "Delimit the results (of source block evaluation)" :sublist org-extra-complete-read-wrap)
-    (:id ":dir" :description "Specifies the default directory during code block execution" :sublist org-extra-complete-read-dir)
-    (:id ":file" "Specifies to write the results to a file" :sublist org-extra-complete-read-file)
-    (:id ":file-desc" :description "Specifies a description for file results")
-    (:id ":epilogue" :description "Appends text to code block body")
-    (:id ":file-ext" :description "File extension")))
+    (:id ":var"
+         :description "*Passes arguments* to code blocks"
+         :sublist org-extra-complete-read-variable)
+    (:id ":wrap"
+         :description "Delimit the results (of source block evaluation)"
+         :sublist org-extra-complete-read-wrap)
+    (:id ":dir"
+         :description
+         "Specifies the default directory during code block execution"
+         :sublist org-extra-complete-read-dir)
+    (:id ":file" "Specifies to write the results to a file" :sublist
+         org-extra-complete-read-file)
+    (:id ":file-desc"
+         :description "Specifies a description for file results")
+    (:id ":epilogue"
+         :description "Appends text to code block body")
+    (:id ":file-ext"
+         :description "File extension")))
 
 (defvar org-extra-complete-buffer-settings-plists
   `((:id "ARCHIVE" :description "archive location of the agenda file (~org-archive-location~)")
@@ -915,11 +1059,14 @@ Return string with label and url, divided with space."
                       (when (looking-at "[\s\t]?+\n#\\+")
                         (forward-line)
                         (org-extra-complete-forward-org-keywords)
-                        (when-let*
-                            ((params (org-extra-complete-src-block-params))
-                             (src-mode (org-src-get-lang-mode (car params)))
-                             (code (buffer-substring-no-properties (nth 1 params)
-                                                                   (nth 2 params))))
+                        (when-let* ((params
+                                     (org-extra-complete-src-block-params))
+                                    (src-mode (org-src-get-lang-mode
+                                               (car params)))
+                                    (code
+                                     (buffer-substring-no-properties
+                                      (nth 1 params)
+                                      (nth 2 params))))
                           (with-temp-buffer
                             (require 'imenu)
                             (save-excursion
@@ -934,11 +1081,12 @@ Return string with label and url, divided with space."
                                      (progn
                                        (pcase src-mode
                                          ('emacs-lisp-mode
-                                          (when-let ((sym
-                                                      (org-extra-complete-elisp-src-name)))
+                                          (when-let
+                                              ((sym
+                                                (org-extra-complete-elisp-src-name)))
                                             (when (symbolp sym)
                                               (symbol-name sym))))))))
-                                (imenu--make-index-alist t)
+                                (ignore-errors (imenu--make-index-alist t))
                                 (if (and imenu--index-alist
                                          extra)
                                     (append (list extra) imenu--index-alist)
