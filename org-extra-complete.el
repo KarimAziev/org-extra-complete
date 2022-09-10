@@ -916,57 +916,112 @@ Return string with label and url, divided with space."
                    (:id "entitiesplain" :description "Leave entities plain." :group 11)))))
 
 (defvar org-extra-complete-export-settings-plists
-  `((:id "AUTHOR" :description "The document author (~user-full-name~)"
+  `((:id "AUTHOR"
+         :description "The document author (~user-full-name~)"
          :sublist ,(mapcar (lambda (id) `(:id ,id))
                            (delete nil (append
                                         (list user-full-name)
                                         (list user-mail-address)))))
-    (:id "INFOJS_OPT" :description "~org-html-infojs-options~" :separator ":"
-         :sublist ((:id "view" :description "Initial view"
-                        :sublist ((:id "showall" :description "Folding interface, all headlines and text visible")
-                                  (:id "content" :description "Folding interface, starting with all headlines visible ")
-                                  (:id "overview" :description "Folding interface, initially showing only top")
-                                  (:id "info" :description "Info-like interface with one section per page")
-                                  (:id "nil" :description "None")))
-                   (:id "sdepth" :description "Maximum headline level as an independent section for info and folding modes"
-                        :sublist ((:id "1" :description "1 level")
-                                  (:id "2" :description "2 level")
-                                  (:id "3" :description "3 level")
-                                  (:id "3" :description "3 level")
-                                  (:id "4" :description "4 level")
-                                  (:id "5" :description "5 level")
-                                  (:id "6" :description "6 level")
-                                  (:id "7" :description "7 level")
-                                  (:id "max" :description "Maximum level")))
-                   (:id "toc" :description "show table of contents"
-                        :sublist ((:id "t" :description "show table of contents")
-                                  (:id "nil" :description "hide table of contents")))
-                   (:id "tdepth" :description "depth of the table of contents ~org-export-headline-levels~"
-                        :sublist ((:id "1" :description "1 level")
-                                  (:id "2" :description "2 level")
-                                  (:id "3" :description "3 level")
-                                  (:id "max" :description "Maximum level")))
-                   (:id "ftoc" :description "display toc as a fixed section"
-                        :sublist ((:id "t" :description "display toc as a fixed section")))
-                   (:id "ltoc" :description "short contents in each section"
-                        :sublist ((:id "above" :description "section should be above initial text")
-                                  (:id "nil" :description "none")
-                                  (:id "t" :description "yes")
-                                  (:id "" :description "number" :value integer)))
-                   (:id "mouse" :description "Higlhight color for headings on mouse over"
+    (:id "INFOJS_OPT"
+         :description "~org-html-infojs-options~"
+         :separator ":"
+         :sublist ((:id "view"
+                        :description "Initial view"
+                        :sublist ((:id "showall"
+                                       :description
+                                       "Folding interface, all headlines and text visible")
+                                  (:id "content"
+                                       :description
+                                       "Folding interface, starting with all headlines visible ")
+                                  (:id "overview"
+                                       :description
+                                       "Folding interface, initially showing only top")
+                                  (:id "info"
+                                       :description
+                                       "Info-like interface with one section per page")
+                                  (:id "nil"
+                                       :description "None")))
+                   (:id "sdepth"
+                        :description
+                        "Maximum headline level as an independent section for info and folding modes"
+                        :sublist ((:id "1"
+                                       :description "1 level")
+                                  (:id "2"
+                                       :description "2 level")
+                                  (:id "3"
+                                       :description "3 level")
+                                  (:id "3"
+                                       :description "3 level")
+                                  (:id "4"
+                                       :description "4 level")
+                                  (:id "5"
+                                       :description "5 level")
+                                  (:id "6"
+                                       :description "6 level")
+                                  (:id "7"
+                                       :description "7 level")
+                                  (:id "max"
+                                       :description "Maximum level")))
+                   (:id "toc"
+                        :description "show table of contents"
+                        :sublist ((:id "t"
+                                       :description "show table of contents")
+                                  (:id "nil"
+                                       :description "hide table of contents")))
+                   (:id "tdepth"
+                        :description
+                        "depth of the table of contents ~org-export-headline-levels~"
+                        :sublist ((:id "1"
+                                       :description "1 level")
+                                  (:id "2"
+                                       :description "2 level")
+                                  (:id "3"
+                                       :description "3 level")
+                                  (:id "max"
+                                       :description "Maximum level")))
+                   (:id "ftoc"
+                        :description "display toc as a fixed section"
+                        :sublist ((:id "t"
+                                       :description
+                                       "display toc as a fixed section")))
+                   (:id "ltoc"
+                        :description "short contents in each section"
+                        :sublist ((:id "above"
+                                       :description
+                                       "section should be above initial text")
+                                  (:id "nil"
+                                       :description "none")
+                                  (:id "t"
+                                       :description "yes")
+                                  (:id ""
+                                       :description "number"
+                                       :value integer)))
+                   (:id "mouse"
+                        :description
+                        "Higlhight color for headings on mouse over"
                         :sublist km-read-web-hex-color)
-                   (:id "buttons" :description "should view-toggle buttons be everywhere"
-                        :sublist ((:id "nil" :description "only one button")
+                   (:id "buttons"
+                        :description "should view-toggle buttons be everywhere"
+                        :sublist ((:id "nil"
+                                       :description "only one button")
                                   (:id "0")
                                   (:id "1")))
-                   (:id "path" :description "The path to the script"
-                        :sublist ((:id  "https://orgmode.org/worg/code/org-info-js/org-info.js")
+                   (:id "path"
+                        :description "The path to the script"
+                        :sublist ((:id
+                                   "https://orgmode.org/worg/code/org-info-js/org-info.js")
                                   (:id "https://orgmodeorg/org-infojs")))))
-    (:id "DESCRIPTION" :description "A HTML meta tag in the HTML file" :value string)
-    (:id "HTML_DOCTYPE" :description "Specify the document type, for example: HTML5."
+    (:id "DESCRIPTION"
+         :description "A HTML meta tag in the HTML file"
+         :value string)
+    (:id "HTML_DOCTYPE"
+         :description "Specify the document type, for example: HTML5."
          :sublist (,(when (boundp 'org-html-doctype-alist)
-                      (mapcar #'car (when org-html-doctype-alist)))))
-    (:id "HTML_CONTAINER" :description "HTML container for wrapping sections and elements (~org-html-container-element~)"
+                      (mapcar #'car
+                              (when org-html-doctype-alist)))))
+    (:id "HTML_CONTAINER"
+         :description
+         "HTML container for wrapping sections and elements (~org-html-container-element~)"
          :sublist ("article" "aside"
                    "audio" "canvas" "details"
                    "figcaption" "figure" "footer"
@@ -974,25 +1029,47 @@ Return string with label and url, divided with space."
                    "nav" "output" "progress"
                    "section" "summary"
                    "video"))
-    (:id "HTML_LINK_HOME" :description "The URL for home link (~org-html-link-home~)."
+    (:id "HTML_LINK_HOME"
+         :description "The URL for home link (~org-html-link-home~)."
          :sublist (,org-html-link-home))
-    (:id "HTML_LINK_UP" :description "The URL for the up link of exported HTML pages (~org-html-link-up~)"
+    (:id "HTML_LINK_UP"
+         :description
+         "The URL for the up link of exported HTML pages (~org-html-link-up~)"
          :sublist (,org-html-link-up))
-    (:id "HTML_HEAD_EXTRA" :description "More arbitrary lines for appending to the HTML document's head (~org-html-head-extra~)"
+    (:id "HTML_HEAD_EXTRA"
+         :description
+         "More arbitrary lines for appending to the HTML document's head (~org-html-head-extra~)"
          :sublist (,org-extra-complete-html-headers))
-    (:id "HTML_HEAD" :description "Arbitrary lines for appending to the HTML document's head (org-html-head)"
+    (:id "HTML_HEAD"
+         :description
+         "Arbitrary lines for appending to the HTML document's head (org-html-head)"
          :sublist (,org-extra-complete-html-headers))
-    (:id "KEYWORDS" :description "HTML meta tags")
-    (:id "HTML_MATHJAX" :description "Options for MathJax (~org-html-mathjax-options~)")
-    (:id "LATEX_HEADER" :description "Arbitrary lines for appending to the preamble")
-    (:id "TITLE" :description "The document's title")
-    (:id "SUBTITLE" :description "The document's subtitle.")
-    (:id "CREATOR" :description "Entity responsible for output generation (~org-export-creator-string~)"
+    (:id "ATTR_HTML"
+         :description
+         "More arbitrary lines for appending to the HTML document's head (~org-html-head-extra~)"
+         :sublist (,org-extra-complete-html-headers))
+    (:id "KEYWORDS"
+         :description "HTML meta tags")
+    (:id "HTML_MATHJAX"
+         :description "Options for MathJax (~org-html-mathjax-options~)")
+    (:id "LATEX_HEADER"
+         :description "Arbitrary lines for appending to the preamble")
+    (:id "TITLE"
+         :description "The document's title")
+    (:id "SUBTITLE"
+         :description "The document's subtitle.")
+    (:id "CREATOR"
+         :description
+         "Entity responsible for output generation (~org-export-creator-string~)"
          :sublist (,org-export-creator-string))
-    (:id "DATE" :description "A date or a time-stamp[fn:120]")
-    (:id "EMAIL" :description "The email address (~user-mail-address~)"
+    (:id "DATE"
+         :description "A date or a time-stamp[fn:120]")
+    (:id "EMAIL"
+         :description "The email address (~user-mail-address~)"
          :sublist (,user-mail-address))
-    (:id "OPTIONS" :separator ":" :sublist
+    (:id "OPTIONS"
+         :separator ":"
+         :sublist
          (,@org-extra-complete-mode-buffer-options-pl)
          :description "Compact form of export options")))
 
