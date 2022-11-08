@@ -323,16 +323,44 @@ Default value of SEPARATOR is space."
                                  (org-extra-complete-search-named-blocks)))
     (concat var "=" value)))
 
+(defun org-extra-complete-get-all-libraries ()
+  "Return a list of all files in `load-path'."
+  (require 'find-func)
+  (let* ((dirs (or find-library-source-path load-path))
+         (suffixes (find-library-suffixes)))
+    (read-library-name--find-files dirs suffixes)))
+
+(defun org-extra-complete-get-all-languages ()
+  "Return a list of all files in `load-path'."
+  (require 'find-func)
+  (let* ((non-org-libs
+          (read-library-name--find-files
+           (seq-remove
+            (apply-partially #'string-suffix-p "org")
+            load-path)
+           (find-library-suffixes)))
+         (ob-langs (mapcar
+                    (lambda (s) (substring s 3))
+                    (seq-filter
+                     (lambda (lib) (and (string-prefix-p "ob-" lib)
+                                   (not
+                                    (string-suffix-p "-autoloads"
+                                                     lib))))
+                     non-org-libs))))
+    (append
+     ob-langs
+     (mapcar 'symbol-name
+             (delete-dups
+              (append
+               (mapcar #'car org-babel-load-languages)
+               (mapcar (lambda (it) (car (reverse it)))
+                       (cdr (nth 1 (memq :key-type
+                                         (get 'org-babel-load-languages
+                                              'custom-type)))))))))))
+
 (defun org-extra-complete-read-language ()
-  "Read language with completion from `org-babel-load-languages'."
-  (let ((langs (delete-dups
-                (append
-                 (mapcar #'car org-babel-load-languages)
-                 (mapcar (lambda (it) (car (reverse it)))
-                         (cdr (nth 1 (memq :key-type
-                                           (get 'org-babel-load-languages
-                                                'custom-type)))))))))
-    (completing-read "Language:\s" langs)))
+  "Read babel language with completion."
+  (completing-read "Language:\s" (org-extra-complete-get-all-languages)))
 
 (defun org-extra-complete-read-property ()
   "Complete property keys in the current buffer."
@@ -388,6 +416,19 @@ Return string with label and url, divided with space."
       (push "\s" parts))
     (push (format "%s" lang) parts)
     (string-join parts "")))
+
+(defun org-extra-complete-block-type (block-type)
+  "Insert structured org template with BLOCK-TYPE."
+  (let*((parts (split-string block-type nil t))
+        (type (pop parts))
+        (strings))
+    (unless (save-excursion
+              (org-extra-complete-goto-matching-closed-block
+               (concat "begin_" type)))
+      (push (concat "\n#+end_" type) strings))
+    (when (looking-back (concat "#\\+begin_" type) 0)
+      (push "\s" strings))
+    (string-join strings "")))
 
 (defun org-extra-complete-begin-export ()
   "Complete #+begin_export keyword."
@@ -1173,18 +1214,36 @@ Return string with label and url, divided with space."
       (read-string "NAME\s" suggestion))))
 
 (defvar org-extra-complete-mode-completions-misc-plist
-  `((:id "html" :description "html block"
-         :sublist (lambda () (read-string "Html")))
-    (:id "caption" :description "Caption"
-         :sublist (lambda () (read-string "CAPTION")))
-    (:id "name" :description "Name" :sublist org-extra-complete-name)
-    (:id "call" :description "Call" :sublist org-extra-complete-call)
-    (:id "(ref)" :description "Ref" :sublist org-extra-complete-insert-ref-link)
-    (:id "include" :description "Include content of file"
+  `(,@(mapcar (lambda (it)
+                (list :id (concat "begin_" (cdr it))
+                      :description (concat "begin_" (cdr it))
+                      :sublist (lambda () (org-extra-complete-block-type (cdr it)))))
+              org-structure-template-alist)
+    (:id "html"
+         :description "html block"
+         :sublist (lambda ()
+                    (read-string "Html ")))
+    (:id "caption"
+         :description "Caption"
+         :sublist (lambda ()
+                    (read-string "CAPTION ")))
+    (:id "name"
+         :description "Name"
+         :sublist org-extra-complete-name)
+    (:id "call"
+         :description "Call"
+         :sublist org-extra-complete-call)
+    (:id "(ref)"
+         :description "Ref"
+         :sublist org-extra-complete-insert-ref-link)
+    (:id "include"
+         :description "Include content of file"
          :sublist org-extra-complete-read-file)
-    (:id "begin_export" :description "Code block"
+    (:id "begin_export"
+         :description "export block"
          :sublist org-extra-complete-begin-export)
-    (:id "begin_src" :description "Code block"
+    (:id "begin_src"
+         :descriptnion "Code block"
          :sublist org-extra-complete-begin-src)))
 
 (defvar org-extra-complete-completions-plist-vars
@@ -1285,7 +1344,8 @@ Return the results of all forms as a list."
       (end-of-file))
     (nreverse ret)))
 
-(defun org-extra-complete-map-plist-completions-to-alist (&optional plists-lists)
+(defun org-extra-complete-map-plist-completions-to-alist (&optional
+                                                          plists-lists)
   "Map PLISTS-LISTS to alist of propertized strings."
   (if (and (listp plists-lists)
            (plist-get plists-lists :value))
@@ -1320,7 +1380,7 @@ Return the results of all forms as a list."
              ('string
               `(,item . (lambda () (format "%s"
                                       (read-string
-                                       ,(format "%s (string):" id))))))
+                                       ,(format "%s (string): " id))))))
              ('integer `(,item . (lambda ()
                                    (format
                                     "%s" (read-number
