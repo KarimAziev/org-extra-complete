@@ -1259,7 +1259,7 @@ Return string with label and url, divided with space."
     (reverse plists)))
 
 (defun org-extra-complete-get-completions-alist ()
-	"Org complete get completions alist."
+  "Org complete get completions alist."
   (org-extra-complete-map-plist-completions-to-alist
    (org-extra-complete-get-all-plists)))
 
@@ -1710,6 +1710,25 @@ Default value for separator is `:\s'."
         (org-extra-complete-insert (string-join (list key (or rest "")) "\s"))))
      (t
       (org-extra-complete-keyword (org-extra-complete-get-completions-alist))))))
+
+(defvar org-extra-complete-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-M-i")
+                #'org-extra-complete)
+    map))
+
+;;;###autoload
+(define-minor-mode org-extra-complete-mode
+  "Add `org-extra-complete-map'."
+  :lighter " ocomp"
+  :keymap org-extra-complete-map
+  :global nil
+  (when org-extra-complete-mode
+    (use-local-map
+     (let ((map (copy-keymap
+                 org-extra-complete-map)))
+       (set-keymap-parent map (current-local-map))
+       map))))
 
 (provide 'org-extra-complete)
 ;;; org-extra-complete.el ends here
