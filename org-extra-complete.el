@@ -1165,7 +1165,11 @@ Return string with label and url, divided with space."
                       cl-defgeneric cl-defmethod define-compiler-macro
                       define-modify-macro defsetf define-setf-expander
                       define-method-combination defalias cl-flet defun-ivy-read
-                      defhydra defgeneric defmethod defun-ivy+ defgroup deftheme
+                      defhydra
+                      transient-define-suffix
+                      transient-define-prefix defgeneric
+                      defmethod
+                      defun-ivy+ defgroup deftheme
                       define-widget define-error defface cl-deftype cl-defstruct
                       deftype defstruct define-condition defpackage defclass))
         (when (symbolp (nth 1 sexp))
@@ -1173,42 +1177,42 @@ Return string with label and url, divided with space."
 
 (defun org-extra-complete-name ()
   "Complete name for src block."
-  (let ((suggestion (save-excursion
-                      (when (looking-at "[\s\t]?+\n#\\+")
-                        (forward-line)
-                        (org-extra-complete-forward-org-keywords)
-                        (when-let* ((params
-                                     (org-extra-complete-src-block-params))
-                                    (src-mode (org-src-get-lang-mode
-                                               (car params)))
-                                    (code
-                                     (buffer-substring-no-properties
-                                      (nth 1 params)
-                                      (nth 2 params))))
-                          (with-temp-buffer
-                            (require 'imenu)
-                            (save-excursion
-                              (funcall src-mode)
-                              (insert code)
-                              (let ((re (org-babel-noweb-wrap)))
-                                (while (re-search-backward re nil t 1)
-                                  (let ((beg (match-beginning 0))
-                                        (end (match-end 0)))
-                                    (delete-region beg end))))
-                              (let ((extra
-                                     (progn
-                                       (pcase src-mode
-                                         ('emacs-lisp-mode
-                                          (when-let
-                                              ((sym
-                                                (org-extra-complete-elisp-src-name)))
-                                            (when (symbolp sym)
-                                              (symbol-name sym))))))))
-                                (ignore-errors (imenu--make-index-alist t))
-                                (if (and imenu--index-alist
-                                         extra)
-                                    (append (list extra) imenu--index-alist)
-                                  (or imenu--index-alist extra))))))))))
+  (let ((suggestion
+         (save-excursion
+           (when (looking-at "[\s\t]?+\n#\\+")
+             (forward-line)
+             (org-extra-complete-forward-org-keywords)
+             (when-let* ((params
+                          (org-extra-complete-src-block-params))
+                         (src-mode (org-src-get-lang-mode
+                                    (car params)))
+                         (code
+                          (buffer-substring-no-properties
+                           (nth 1 params)
+                           (nth 2 params))))
+               (with-temp-buffer
+                 (require 'imenu)
+                 (save-excursion
+                   (funcall src-mode)
+                   (insert code)
+                   (let ((re (org-babel-noweb-wrap)))
+                     (while (re-search-backward re nil t 1)
+                       (let ((beg (match-beginning 0))
+                             (end (match-end 0)))
+                         (delete-region beg end))))
+                   (let ((extra
+                          (progn
+                            (pcase src-mode
+                              ('emacs-lisp-mode
+                               (when-let ((sym
+                                           (org-extra-complete-elisp-src-name)))
+                                 (when (symbolp sym)
+                                   (symbol-name sym))))))))
+                     (ignore-errors (imenu--make-index-alist t))
+                     (if (and imenu--index-alist
+                              extra)
+                         (append (list extra) imenu--index-alist)
+                       (or imenu--index-alist extra))))))))))
     (if (and suggestion (listp suggestion))
         (completing-read "NAME\s" suggestion)
       (read-string "NAME\s" suggestion))))
@@ -1715,12 +1719,14 @@ Default value for separator is `:\s'."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-M-i")
                 #'org-extra-complete)
+    (define-key map (kbd "C-C i")
+                #'org-extra-complete)
     map))
 
 ;;;###autoload
 (define-minor-mode org-extra-complete-mode
   "Add `org-extra-complete-map'."
-  :lighter " ocomp"
+  :lighter " ocmp"
   :keymap org-extra-complete-map
   :global nil
   (when org-extra-complete-mode
