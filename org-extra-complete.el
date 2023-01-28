@@ -956,6 +956,25 @@ Return string with label and url, divided with space."
                    (:id "entitiespretty" :description "Show entities as UTF-8 characters where possible." :group 11)
                    (:id "entitiesplain" :description "Leave entities plain." :group 11)))))
 
+(defun org-extra-read-web-color ()
+  "Show a list of all W3C web colors for use in CSS.
+
+You can insert or kill the name or hexadecimal RGB value of the
+selected color."
+  (require 'shr-color)
+  (if (boundp 'shr-color-html-colors-alist)
+      (completing-read " "
+                       (mapcar
+                        (lambda (cell)
+                          (let ((color (car cell)))
+                            (propertize (seq-copy (cdr cell)) 'face
+                                        (list :background
+                                              (cdr
+                                               (assoc color
+                                                      shr-color-html-colors-alist))))))
+                        shr-color-html-colors-alist))
+    (read-string "Color: ")))
+
 (defvar org-extra-complete-export-settings-plists
   `((:id "AUTHOR"
          :description "The document author (~user-full-name~)"
@@ -1040,7 +1059,7 @@ Return string with label and url, divided with space."
                    (:id "mouse"
                         :description
                         "Higlhight color for headings on mouse over"
-                        :sublist km-read-web-hex-color)
+                        :sublist org-extra-read-web-color)
                    (:id "buttons"
                         :description "should view-toggle buttons be everywhere"
                         :sublist ((:id "nil"
