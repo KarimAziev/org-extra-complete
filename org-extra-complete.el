@@ -1077,8 +1077,7 @@ selected color."
     (:id "HTML_DOCTYPE"
          :description "Specify the document type, for example: HTML5."
          :sublist (,(when (boundp 'org-html-doctype-alist)
-                      (mapcar #'car
-                              (when org-html-doctype-alist)))))
+                      (mapcar #'car org-html-doctype-alist))))
     (:id "HTML_CONTAINER"
          :description
          "HTML container for wrapping sections and elements (~org-html-container-element~)"
