@@ -329,7 +329,7 @@ Default value of SEPARATOR is space."
   (let* ((dirs (or find-library-source-path load-path))
          (suffixes (find-library-suffixes)))
     (read-library-name--find-files dirs suffixes)))
-
+(defvar org-extra-complete-language-history nil)
 (defun org-extra-complete-get-all-languages ()
   "Return a list of all files in `load-path'."
   (require 'find-func)
@@ -360,7 +360,15 @@ Default value of SEPARATOR is space."
 
 (defun org-extra-complete-read-language ()
   "Read babel language with completion."
-  (completing-read "Language:\s" (org-extra-complete-get-all-languages)))
+  (let* ((hist (mapcar #'substring-no-properties
+                       org-extra-complete-language-history))
+         (langs (org-extra-complete-get-all-languages))
+         (languages (if hist
+                        (append hist
+                                (seq-difference langs hist))
+                      langs)))
+    (completing-read "Language:\s" languages
+                     nil nil nil 'org-extra-complete-language-history)))
 
 (defun org-extra-complete-read-property ()
   "Complete property keys in the current buffer."
@@ -416,6 +424,7 @@ Return string with label and url, divided with space."
       (push "\s" parts))
     (push (format "%s" lang) parts)
     (string-join parts "")))
+
 
 (defun org-extra-complete-block-type (block-type)
   "Insert structured org template with BLOCK-TYPE."
@@ -956,7 +965,7 @@ Return string with label and url, divided with space."
                    (:id "entitiespretty" :description "Show entities as UTF-8 characters where possible." :group 11)
                    (:id "entitiesplain" :description "Leave entities plain." :group 11)))))
 
-(defun org-extra-read-web-color ()
+(defun org-extra-complete-read-web-color ()
   "Show a list of all W3C web colors for use in CSS.
 
 You can insert or kill the name or hexadecimal RGB value of the
@@ -1059,7 +1068,7 @@ selected color."
                    (:id "mouse"
                         :description
                         "Higlhight color for headings on mouse over"
-                        :sublist org-extra-read-web-color)
+                        :sublist org-extra-complete-read-web-color)
                    (:id "buttons"
                         :description "should view-toggle buttons be everywhere"
                         :sublist ((:id "nil"
@@ -1615,6 +1624,20 @@ Default value for separator is `:\s'."
              (setq rest (or (org-extra-complete-map-values parts separator) ""))
              (skip-chars-backward "\s\t")
              (org-extra-complete-insert (concat key rest))))
+          ((and (region-active-p)
+                (use-region-p))
+           (let ((reg (org-extra-complete-get-region))
+                 (beg (region-beginning))
+                 (end (region-end))
+                 (lang (org-extra-complete-read-language)))
+             (replace-region-contents beg end (lambda ()
+                                                (concat "#+begin_src "
+                                                        lang
+                                                        "\n"
+                                                        reg
+                                                        "\n"
+                                                        "#+end_src\n")))
+             (forward-line 1)))
           (t (org-extra-complete-insert (org-extra-complete-insert-ref-link))))))
 
 ;;;###autoload
@@ -1671,73 +1694,77 @@ Default value for separator is `:\s'."
                            first-word))))
          (inside-code (org-extra-complete-inside-src-code-p))
          (suboptions))
-    (cond
-     ((and inside-code (looking-back "<<" 0))
-      (when-let ((name (completing-read
-                        "Include:\s"
-                        (org-extra-complete-search-named-blocks))))
-        (if (looking-at ">>")
-            (insert name)
-          (insert name ">>"))))
-     ((and inside-code)
-      (org-extra-complete-make-code-ref))
-     ((and inside-src (not inside-code))
-      (org-extra-complete-src-headers-args))
-     ((setq suboptions (and first-word
-                            (org-extra-complete-option-variants
-                             first-word
-                             (org-extra-complete-get-completions-alist))))
-      (when-let* ((option (car suboptions))
-                  (separator (or (and option (org-extra-complete-get-prop
-                                              option :separator))
-                                 ": "))
-                  (subitems (cdr suboptions)))
-        (let ((value (org-extra-complete-map-values
-                      (org-extra-complete-alist
-                       subitems)
-                      separator))
-              (trimmed (org-extra-complete-strip-props option))
-              (line-beg (line-beginning-position)))
-          (cond ((save-excursion (re-search-backward (concat trimmed ":\s")
-                                                     line-beg t 1))
-                 (org-extra-complete-insert value))
-                ((save-excursion (re-search-backward (concat trimmed ":")
-                                                     line-beg t 1))
-                 (insert "\s" value))
-                ((looking-back "[\s\t]" 0)
-                 (skip-chars-backward "\s\t")
-                 (org-extra-complete-insert
-                  (concat
-                   (org-extra-complete-normalize-keyword option separator)
-                   value)))
-                (t
-                 (org-extra-complete-insert
-                  (concat (org-extra-complete-normalize-keyword option separator)
-                          value)))))))
-     ((org-extra-complete-line-empty-p)
-      (let ((parts (org-extra-complete-alist
-                    (org-extra-complete-get-completions-alist)))
-            (key)
-            (rest)
-            (opt)
-            (separator))
-        (setq opt (org-extra-complete-mode-trim-keyword (pop parts)))
-        (setq separator (org-extra-complete-get-prop opt :separator))
-        (setq key (if (string-match-p "^begin" opt)
-                      (concat "#+" opt)
-                    (if (equal opt "(ref)")
-                        ""
-                      (concat "#+" opt ":"))))
-        (setq rest (org-extra-complete-map-values parts separator))
-        (org-extra-complete-insert (string-join (list key (or rest "")) "\s"))))
-     (t
-      (org-extra-complete-keyword (org-extra-complete-get-completions-alist))))))
+    (cond ((and inside-code (looking-back "<<" 0))
+           (when-let ((name (completing-read
+                             "Include:\s"
+                             (org-extra-complete-search-named-blocks))))
+             (if (looking-at ">>")
+                 (insert name)
+               (insert name ">>"))))
+          ((and inside-code)
+           (org-extra-complete-make-code-ref))
+          ((and inside-src (not inside-code))
+           (org-extra-complete-src-headers-args))
+          ((setq suboptions (and first-word
+                                 (org-extra-complete-option-variants
+                                  first-word
+                                  (org-extra-complete-get-completions-alist))))
+           (when-let* ((option (car suboptions))
+                       (separator (or (and option (org-extra-complete-get-prop
+                                                   option :separator))
+                                      ": "))
+                       (subitems (cdr suboptions)))
+             (let ((value (org-extra-complete-map-values
+                           (org-extra-complete-alist
+                            subitems)
+                           separator))
+                   (trimmed (org-extra-complete-strip-props option))
+                   (line-beg (line-beginning-position)))
+               (cond ((save-excursion
+                        (re-search-backward (concat trimmed ":\s")
+                                            line-beg t 1))
+                      (org-extra-complete-insert value))
+                     ((save-excursion
+                        (re-search-backward (concat trimmed ":")
+                                            line-beg t 1))
+                      (insert "\s" value))
+                     ((looking-back "[\s\t]" 0)
+                      (skip-chars-backward "\s\t")
+                      (org-extra-complete-insert
+                       (concat
+                        (org-extra-complete-normalize-keyword option separator)
+                        value)))
+                     (t
+                      (org-extra-complete-insert
+                       (concat
+                        (org-extra-complete-normalize-keyword option separator)
+                        value)))))))
+          ((org-extra-complete-line-empty-p)
+           (let ((parts (org-extra-complete-alist
+                         (org-extra-complete-get-completions-alist)))
+                 (key)
+                 (rest)
+                 (opt)
+                 (separator))
+             (setq opt (org-extra-complete-mode-trim-keyword (pop parts)))
+             (setq separator (org-extra-complete-get-prop opt :separator))
+             (setq key (if (string-match-p "^begin" opt)
+                           (concat "#+" opt)
+                         (if (equal opt "(ref)")
+                             ""
+                           (concat "#+" opt ":"))))
+             (setq rest (org-extra-complete-map-values parts separator))
+             (print rest)
+             (org-extra-complete-insert
+              (string-join (list key (or rest ""))
+                           "\s"))))
+          (t
+           (org-extra-complete-keyword
+            (org-extra-complete-get-completions-alist))))))
 
 (defvar org-extra-complete-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-M-i")
-                #'org-extra-complete)
-    (define-key map (kbd "C-C i")
                 #'org-extra-complete)
     map))
 
@@ -1749,10 +1776,7 @@ Default value for separator is `:\s'."
   :global nil
   (when org-extra-complete-mode
     (use-local-map
-     (let ((map (copy-keymap
-                 org-extra-complete-map)))
-       (set-keymap-parent map (current-local-map))
-       map))))
+     (make-composed-keymap org-extra-complete-map (current-local-map)))))
 
 (provide 'org-extra-complete)
 ;;; org-extra-complete.el ends here
