@@ -23,6 +23,7 @@
 ;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 
 ;; This file configures operations with extra complete
@@ -429,9 +430,9 @@ Return string with label and url, divided with space."
 
 (defun org-extra-complete-block-type (block-type)
   "Insert structured org template with BLOCK-TYPE."
-  (let*((parts (split-string block-type nil t))
-        (type (pop parts))
-        (strings))
+  (let* ((parts (split-string block-type nil t))
+         (type (pop parts))
+         (strings))
     (unless (save-excursion
               (org-extra-complete-goto-matching-closed-block
                (concat "begin_" type)))
@@ -1245,16 +1246,40 @@ selected color."
         (completing-read "NAME\s" suggestion)
       (read-string "NAME\s" suggestion))))
 
+(defun org-extra-complete-html-with-company ()
+  "Force complete with `company-begin-backend' in any mode."
+  (interactive)
+  (require 'company)
+  (let ((major-mode 'html-mode))
+    (unless (bound-and-true-p company-mode)
+      (require 'company-web)
+      (when (fboundp 'company-mode)
+        (company-mode 1)))
+    (when (fboundp 'company-begin-backend)
+      (company-begin-backend 'company-web-html
+                             (lambda (&rest args) args)))))
+
+(defun org-extra-complete-html ()
+  "Complete HTML tags or prompt for input."
+  (require 'company-web nil t)
+  (let ((tag (if (fboundp 'company-web-candidates-tags)
+                 (completing-read "HTML: " (company-web-candidates-tags))
+               (read-string "HTML: "))))
+    (if (string-prefix-p "<" tag)
+        tag
+      (concat "<" "/>"))))
+
 (defvar org-extra-complete-mode-completions-misc-plist
   `(,@(mapcar (lambda (it)
-                (list :id (concat "begin_" (cdr it))
-                      :description (concat "begin_" (cdr it))
-                      :sublist (lambda () (org-extra-complete-block-type (cdr it)))))
+                (list
+                 :id (concat "begin_" (cdr it))
+                 :description (concat "begin_" (cdr it))
+                 :sublist (lambda ()
+                            (org-extra-complete-block-type (cdr it)))))
               org-structure-template-alist)
     (:id "html"
          :description "html block"
-         :sublist (lambda ()
-                    (read-string "Html ")))
+         :sublist org-extra-complete-html)
     (:id "caption"
          :description "Caption"
          :sublist (lambda ()
@@ -1275,7 +1300,7 @@ selected color."
          :description "export block"
          :sublist org-extra-complete-begin-export)
     (:id "begin_src"
-         :descriptnion "Code block"
+         :description "Code block"
          :sublist org-extra-complete-begin-src)))
 
 (defvar org-extra-complete-completions-plist-vars
@@ -1375,7 +1400,17 @@ selected color."
 (defun org-extra-complete-get-completions-alist ()
   "Org complete get completions alist."
   (org-extra-complete-map-plist-completions-to-alist
-   (org-extra-complete-get-all-plists)))
+   (if (not org-html-html5-fancy)
+       (org-extra-complete-get-all-plists)
+     (append
+      (org-extra-complete-get-all-plists)
+      (mapcar (lambda (it)
+                (list
+                 :id (concat "begin_" it)
+                 :description (concat "<" it "/>")
+                 :sublist (lambda ()
+                            (org-extra-complete-block-type it))))
+              org-html-html5-elements)))))
 
 (defun org-extra-complete-src-block-params ()
   "If point is inside body of src block return list - (LANGUAGE BEGINNING END)."
@@ -1784,6 +1819,9 @@ Default value for separator is `:\s'."
              (if (looking-at ">>")
                  (insert name)
                (insert name ">>"))))
+          ((and (not inside-code)
+                (looking-back "<" 0))
+           (org-extra-complete-html-with-company))
           ((and inside-code)
            (org-extra-complete-make-code-ref))
           ((and inside-src (not inside-code))
