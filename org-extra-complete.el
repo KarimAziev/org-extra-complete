@@ -350,7 +350,7 @@ Default value of SEPARATOR is space."
                      non-org-libs))))
     (append
      ob-langs
-     (mapcar 'symbol-name
+     (mapcar #'symbol-name
              (delete-dups
               (append
                (mapcar #'car org-babel-load-languages)
