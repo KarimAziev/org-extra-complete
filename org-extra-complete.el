@@ -6,7 +6,8 @@
 ;; URL: https://github.com/KarimAziev/org-extra-complete
 ;; Keywords: convenience, outlines
 ;; Version: 0.1.1
-;; Package-Requires: ((emacs "27.1"))
+;; Package-Requires: ((emacs "29.1") (org "9.6.7"))
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; This file is NOT part of GNU Emacs.
 
