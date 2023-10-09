@@ -1282,6 +1282,88 @@ selected color."
     org-extra-complete-buffer-settings-plists
     org-extra-complete-mode-completions-misc-plist))
 
+;;;###autoload (autoload 'org-extra-complete-structure-template "org-extra-complete" nil t)
+(transient-define-prefix org-extra-complete-structure-template ()
+  [:setup-children
+   (lambda (&rest _argsn)
+     (mapcar
+      (apply-partially #'transient-parse-suffix
+                       transient--prefix)
+      (mapcar
+       (lambda (it)
+         (let* ((key (car it))
+                (value (cdr it))
+                (sym))
+           (setq sym (make-symbol (concat
+                                   "org-extra-complete--template-alist-insert-"
+                                   value)))
+           (funcall #'fset
+                    sym
+                    (lambda ()
+                      (interactive)
+                      (let ((end-block
+                             (downcase
+                              (org-extra-complete-block-type
+                               value)))
+                            (beg-block (downcase
+                                        (concat
+                                         "#+begin_"
+                                         (pcase value
+                                           ("src"
+                                            (concat
+                                             " "
+                                             (org-extra-complete-read-language)))
+                                           (_ value))))))
+                        (cond ((region-active-p)
+                               (let ((beg (region-beginning))
+                                     (end (region-end)))
+                                 (replace-region-contents
+                                  beg end
+                                  (lambda ()
+                                    (concat
+                                     (save-excursion
+                                       (goto-char beg)
+                                       (if (not (looking-back "\n" 0))
+                                           "\n"
+                                         ""))
+                                     beg-block "\n"
+                                     (buffer-substring-no-properties
+                                      beg end)
+                                     end-block
+                                     (save-excursion
+                                       (goto-char end)
+                                       (if (not (looking-at "\n"))
+                                           "\n"
+                                         "")))))))
+                              (t
+                               (if (org-extra-complete-get-word
+                                    "-*_~$A-Za-z0-9:#\\+")
+                                   (org-extra-complete-insert
+                                    (concat
+                                     beg-block
+                                     "\n"
+                                     end-block
+                                     (if (not (looking-at "\n"))
+                                         "\n"
+                                       "")))
+                                 (insert
+                                  (concat
+                                   (if (not (looking-back "\n" 0))
+                                       "\n"
+                                     "")
+                                   beg-block
+                                   "\n"
+                                   end-block
+                                   (if (not (looking-at "\n"))
+                                       "\n"
+                                     ""))))
+                               (re-search-backward "\n" nil t 1)
+                               (forward-line -1))))))
+           (list key value sym)))
+       org-structure-template-alist)))]
+  (interactive)
+  (transient-setup #'org-extra-complete-structure-template))
+
 (defun org-extra-complete-get-all-plists ()
   "Merge plists defined in `org-extra-complete-completions-plist-vars'."
   (let ((plists))
@@ -1766,6 +1848,9 @@ Default value for separator is `:\s'."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-M-i")
                 #'org-extra-complete)
+    (define-key map
+                (kbd "C-c C-,")
+                #'org-extra-complete-structure-template)
     map))
 
 ;;;###autoload
