@@ -151,7 +151,7 @@ except that ] is never special and \ quotes ^, - or \ (but
   (concat
    "\\("
    org-extra-complete-browse-url-protocol-regex
-   "\\([a-z-0-9]+\\(\\(:[0-9]*\\)\\|\\.[a-z]+\\)+/?[a-z]?[^\];\s\t\n\r\f|]*[a-z-0-9]+\\)"
+   "\\([a-z-0-9]+\\(\\(:[0-9]*\\)\\|\\.[a-z]+\\)+/?[a-z]?[^\\];\s\t\n\r\f|]*[a-z-0-9]+\\)"
    "\\)")
   "Regexp with protocols.")
 
@@ -183,9 +183,10 @@ except that ] is never special and \ quotes ^, - or \ (but
 (defun org-extra-complete-url-get-urls ()
   "Return list of urls from minibuffer current buffer."
   (append
-   (seq-filter (lambda (it) (and (string-match-p
-                             "\\(^\\|[^a-zZ-A]\\)http[s]?://" it)
-                            (null (string-match-p "[\n\r\f]" it))))
+   (seq-filter (lambda (it)
+                 (and (string-match-p
+                       "\\(^\\|[^a-z]\\)http[s]?://" it)
+                      (null (string-match-p "[\n\r\f]" it))))
                (append (seq-copy kill-ring)
                        (seq-copy minibuffer-history)))
    (if (minibuffer-window-active-p (selected-window))
@@ -410,7 +411,7 @@ Return string with label and url, divided with space."
                           (1- count))))
           (if (looking-at (concat "end_" subtype))
               (progn
-                (skip-chars-forward "#-*\"'_~$A-Za-z0-9:.\\+")
+                (skip-chars-forward "#*\"'_~$A-Za-z0-9:.+-")
                 (point))
             (goto-char beg)
             nil))))))
@@ -1718,7 +1719,7 @@ Default value for separator is `:\s'."
                        (cdr (assoc keyword items)))
                       (org-extra-complete-get-prop keyword :separator))
                      ""))))
-          ((looking-back "#\\+\\([a-z-_:]+\\)[\s\t]*" 0)
+          ((looking-back "#\\+\\([a-z_:-]+\\)[\s\t]*" 0)
            (let ((prefix (org-extra-complete-mode-trim-keyword
                           init-word))
                  (parts)
