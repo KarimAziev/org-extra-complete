@@ -1837,7 +1837,6 @@ Default value for separator is `:\s'."
                              ""
                            (concat "#+" opt ":"))))
              (setq rest (org-extra-complete-map-values parts separator))
-             (print rest)
              (org-extra-complete-insert
               (string-join (list key (or rest ""))
                            "\s"))))
