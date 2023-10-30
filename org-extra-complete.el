@@ -43,6 +43,7 @@
 (require 'ox)
 (require 'ox-html)
 
+
 (declare-function imenu--make-index-alist "imenu")
 (defvar imenu--index-alist)
 
@@ -256,16 +257,26 @@ X can be any object."
 If word at point is prefix of ITEM, complete it, else insert ITEM.
 Optional argument SEPARATOR is a string to insert just after ITEM.
 Default value of SEPARATOR is space."
-  (let ((parts))
-    (setq parts
-          (if-let ((current-word (org-extra-complete-get-word
-                                  "-*_~$A-Za-z0-9:#\\+")))
-              (progn
-                (if (string-prefix-p current-word item)
-                    (list (substring-no-properties item (length current-word)))
-                  (list (or separator "\s") item)))
-            (list item)))
-    (apply #'insert parts)))
+  (let ((str))
+    (when (region-active-p)
+      (delete-region (region-beginning)
+                     (region-end)))
+    (setq str
+          (string-join
+           (if-let ((current-word (org-extra-complete-get-word
+                                   "-*_~$A-Za-z0-9:#\\+")))
+               (progn
+                 (if (string-prefix-p current-word item)
+                     (list (substring-no-properties item (length current-word)))
+                   (list (or separator "\s") item)))
+             (list item))
+           ""))
+    (if (not (string-match-p "[$]0" str))
+        (insert str)
+      (let ((pos (string-match-p "[$]0" str)))
+        (save-excursion
+          (insert (replace-regexp-in-string "[$]0" "" str)))
+        (forward-char pos)))))
 
 (defun org-extra-complete-plist-pick (keywords plist)
   "Pick KEYWORDS from PLIST without nil."
@@ -284,10 +295,6 @@ Default value of SEPARATOR is space."
     (let ((beg (line-beginning-position))
           (end (line-end-position)))
       (split-string (buffer-substring-no-properties beg end)))))
-
-(defun org-extra-complete-line-empty-p (&optional line)
-  "Return t if LINE or current line is empty."
-  (= 0 (length (org-extra-complete-line-get-line-words line))))
 
 (defun org-extra-complete-read-tag ()
   "Read org global tag with completion."
@@ -332,46 +339,91 @@ Default value of SEPARATOR is space."
   (let* ((dirs (or find-library-source-path load-path))
          (suffixes (find-library-suffixes)))
     (read-library-name--find-files dirs suffixes)))
+
 (defvar org-extra-complete-language-history nil)
-(defun org-extra-complete-get-all-languages ()
-  "Return a list of all files in `load-path'."
-  (require 'find-func)
-  (let* ((non-org-libs
-          (read-library-name--find-files
-           (seq-remove
-            (apply-partially #'string-suffix-p "org")
-            load-path)
-           (find-library-suffixes)))
-         (ob-langs (mapcar
-                    (lambda (s) (substring s 3))
-                    (seq-filter
-                     (lambda (lib) (and (string-prefix-p "ob-" lib)
-                                   (not
-                                    (string-suffix-p "-autoloads"
-                                                     lib))))
-                     non-org-libs))))
-    (append
-     ob-langs
-     (mapcar #'symbol-name
-             (delete-dups
-              (append
-               (mapcar #'car org-babel-load-languages)
-               (mapcar (lambda (it) (car (reverse it)))
-                       (cdr (nth 1 (memq :key-type
-                                         (get 'org-babel-load-languages
-                                              'custom-type)))))))))))
+
+(defun org-extra-complete-ob-packages ()
+  "List all `org-babel' languages in `features' excluding core and autoloads."
+  (let ((langs))
+    (dolist (it features)
+      (let ((name (symbol-name it)))
+        (when (and
+               (string-prefix-p "ob-" name)
+               (not (member name '("ob-core" "ob-eval" "ob-table" "ob-tangle"
+                                   "ob-comint"
+                                   "ob-exp"
+                                   "ob-lob"
+                                   "ob-ref")))
+               (not (or (string-suffix-p "-autoloads" name)
+                        (string-suffix-p "-mode" name))))
+          (push (substring-no-properties name 3) langs))))
+    langs))
+
+(defun org-extra-complete-get-all-external-babel-languages ()
+  "Retrieve all external Babel languages supported by Org mode."
+  (let* ((suffixes (find-library-suffixes))
+         (regexp (concat (regexp-opt suffixes) "\\'"))
+         (dirs (seq-remove
+                (apply-partially #'string-suffix-p "org")
+                load-path))
+         (files nil))
+    (dolist (dir dirs)
+      (dolist (file (ignore-errors (directory-files dir nil regexp t)))
+        (when (string-match regexp file)
+          (let ((name (substring file 0 (match-beginning 0))))
+            (when (and (string-prefix-p "ob-" name)
+                       (not
+                        (or (string-suffix-p "-autoloads" name)
+                            (string-suffix-p "-mode" name))))
+              (push (substring name 3) files))))))
+    files))
+
+(defun org-extra-complete-get-all-babel-languages ()
+  "Retrieve all languages supported by Babel in Org mode."
+  (delete-dups
+   (mapcar (lambda (it)
+             (substring-no-properties
+              (format "%s" it)))
+           (append
+            (mapcar #'car org-babel-load-languages)
+            (mapcar #'car org-src-lang-modes)
+            (mapcar (pcase-lambda (`(,_t ,_k ,_label ,sym)) sym)
+                    (cdadr (memq :key-type
+                                 (get
+                                  'org-babel-load-languages
+                                  'custom-type))))
+            (org-extra-complete-get-all-external-babel-languages)
+            (org-extra-complete-ob-packages)))))
 
 (defun org-extra-complete-read-language ()
   "Read babel language with completion."
   (let* ((hist (mapcar #'substring-no-properties
                        org-extra-complete-language-history))
-         (langs (org-extra-complete-get-all-languages))
+         (langs (org-extra-complete-get-all-babel-languages))
+         (maxlen (if langs (apply #'max (mapcar #'length langs)) 20))
          (languages (if hist
                         (append hist
                                 (seq-difference langs hist))
-                      langs)))
-    (completing-read "Language:\s" languages
-                     nil nil nil 'org-extra-complete-language-history)))
+                      langs))
+         (annotf (lambda (str)
+                   (let ((lang-mode (org-src-get-lang-mode str)))
+                     (concat
+                      (propertize " " 'display
+                                  `(space :align-to
+                                          ,maxlen))
+                      (format " (%s) %s"
+                              lang-mode
+                              (if (fboundp lang-mode)
+                                  ""
+                                "unknown mode")))))))
+    (completing-read "Language:\s"
+                     (lambda (str pred action)
+                       (if (eq action 'metadata)
+                           `(metadata
+                             (annotation-function . ,annotf))
+                         (complete-with-action action languages str pred)))
+                     nil nil
+                     nil 'org-extra-complete-language-history)))
 
 (defun org-extra-complete-read-property ()
   "Complete property keys in the current buffer."
@@ -431,16 +483,75 @@ Return string with label and url, divided with space."
 
 (defun org-extra-complete-block-type (block-type)
   "Insert structured org template with BLOCK-TYPE."
-  (let* ((parts (split-string block-type nil t))
-         (type (pop parts))
-         (strings))
-    (unless (save-excursion
-              (org-extra-complete-goto-matching-closed-block
-               (concat "begin_" type)))
-      (push (concat "\n#+end_" type) strings))
-    (when (looking-back (concat "#\\+begin_" type) 0)
-      (push "\s" strings))
-    (string-join strings "")))
+  (let ((end-block
+         (downcase
+          (let* ((parts (split-string block-type nil t))
+                 (type (pop parts))
+                 (strings))
+            (unless (save-excursion
+                      (org-extra-complete-goto-matching-closed-block
+                       (concat "begin_" type)))
+              (push (concat "\n#+end_" type) strings))
+            (string-join strings ""))))
+        (beg-block (downcase
+                    (concat
+                     "#+begin_"
+                     (pcase block-type
+                       ("src"
+                        (concat
+                         block-type
+                         " "
+                         (org-extra-complete-read-language)))
+                       ("export"
+                        (concat
+                         block-type
+                         " "
+                         (completing-read "Lang\s"
+                                          '("html" "latext" "beamer" ""))))
+                       (_ block-type))
+                     "\n$0"))))
+    (cond ((region-active-p)
+           (let ((beg (region-beginning))
+                 (end (region-end)))
+             (concat
+              (save-excursion
+                (goto-char beg)
+                (if (org-extra-complete-line-empty-p -1) ""
+                  "\n"))
+              beg-block
+              (buffer-substring-no-properties
+               beg end)
+              "\n"
+              end-block
+              (save-excursion
+                (goto-char end)
+                (if (org-extra-complete-line-empty-p 1) "" "\n")))))
+          ((org-extra-complete-line-empty-p)
+           (concat (if (org-extra-complete-line-empty-p -1) "" "\n")
+                   beg-block end-block
+                   (if (org-extra-complete-line-empty-p 1) "" "\n")))
+          ((string-prefix-p
+            (string-trim-left
+             (downcase
+              (buffer-substring-no-properties
+               (line-beginning-position)
+               (point))))
+            beg-block)
+           (concat
+            (if (org-extra-complete-line-empty-p -1) "" "\n")
+            (substring beg-block
+                       (length
+                        (string-trim-left
+                         (downcase
+                          (buffer-substring-no-properties
+                           (line-beginning-position)
+                           (point))))))
+            end-block
+            (if (org-extra-complete-line-empty-p 1) "" "\n")))
+          (t
+           (concat (if (org-extra-complete-line-empty-p 1) "" "\n") beg-block
+                   end-block
+                   (if (org-extra-complete-line-empty-p -1) "" "\n"))))))
 
 (defun org-extra-complete-begin-export ()
   "Complete #+begin_export keyword."
@@ -1292,104 +1403,37 @@ selected color."
          :description "Call"
          :sublist org-extra-complete-call)
     (:id "(ref)"
-         :description "Ref"
+         :description "Reference "
          :sublist org-extra-complete-insert-ref-link)
     (:id "include"
          :description "Include content of file"
-         :sublist org-extra-complete-read-file)
-    (:id "begin_export"
-         :description "export block"
-         :sublist org-extra-complete-begin-export)
-    (:id "begin_src"
-         :description "Code block"
-         :sublist org-extra-complete-begin-src)))
+         :sublist org-extra-complete-read-file)))
 
 (defvar org-extra-complete-completions-plist-vars
   '(org-extra-complete-export-settings-plists
     org-extra-complete-buffer-settings-plists
     org-extra-complete-mode-completions-misc-plist))
 
-;;;###autoload (autoload 'org-extra-complete-structure-template "org-extra-complete" nil t)
-(transient-define-prefix org-extra-complete-structure-template ()
-  [:setup-children
-   (lambda (&rest _argsn)
-     (mapcar
-      (apply-partially #'transient-parse-suffix
-                       transient--prefix)
-      (mapcar
-       (lambda (it)
-         (let* ((key (car it))
-                (value (cdr it))
-                (sym))
-           (setq sym (make-symbol (concat
-                                   "org-extra-complete--template-alist-insert-"
-                                   value)))
-           (funcall #'fset
-                    sym
-                    (lambda ()
-                      (interactive)
-                      (let ((end-block
-                             (downcase
-                              (org-extra-complete-block-type
-                               value)))
-                            (beg-block (downcase
-                                        (concat
-                                         "#+begin_"
-                                         (pcase value
-                                           ("src"
-                                            (concat
-                                             " "
-                                             (org-extra-complete-read-language)))
-                                           (_ value))))))
-                        (cond ((region-active-p)
-                               (let ((beg (region-beginning))
-                                     (end (region-end)))
-                                 (replace-region-contents
-                                  beg end
-                                  (lambda ()
-                                    (concat
-                                     (save-excursion
-                                       (goto-char beg)
-                                       (if (not (looking-back "\n" 0))
-                                           "\n"
-                                         ""))
-                                     beg-block "\n"
-                                     (buffer-substring-no-properties
-                                      beg end)
-                                     end-block
-                                     (save-excursion
-                                       (goto-char end)
-                                       (if (not (looking-at "\n"))
-                                           "\n"
-                                         "")))))))
-                              (t
-                               (if (org-extra-complete-get-word
-                                    "-*_~$A-Za-z0-9:#\\+")
-                                   (org-extra-complete-insert
-                                    (concat
-                                     beg-block
-                                     "\n"
-                                     end-block
-                                     (if (not (looking-at "\n"))
-                                         "\n"
-                                       "")))
-                                 (insert
-                                  (concat
-                                   (if (not (looking-back "\n" 0))
-                                       "\n"
-                                     "")
-                                   beg-block
-                                   "\n"
-                                   end-block
-                                   (if (not (looking-at "\n"))
-                                       "\n"
-                                     ""))))
-                               (re-search-backward "\n" nil t 1)
-                               (forward-line -1))))))
-           (list key value sym)))
-       org-structure-template-alist)))]
-  (interactive)
-  (transient-setup #'org-extra-complete-structure-template))
+(defun org-extra-complete-line-empty-p (&optional arg)
+  "Check if the current or specified line in the buffer is empty or not.
+
+Optional argument ARG: This is an integer that specifies the line number
+relative to the current line.
+If not provided, the default value is nil, which means the function will check
+if the current line is empty."
+  (if (or (not arg)
+          (zerop arg))
+      (string-empty-p
+       (string-trim
+        (buffer-substring-no-properties
+         (line-beginning-position)
+         (line-end-position))))
+    (save-excursion
+      (when (zerop (forward-line arg))
+        (string-empty-p (string-trim
+                         (buffer-substring-no-properties
+                          (line-beginning-position)
+                          (line-end-position))))))))
 
 (defun org-extra-complete-get-all-plists ()
   "Merge plists defined in `org-extra-complete-completions-plist-vars'."
@@ -1703,7 +1747,8 @@ Default value for separator is `:\s'."
          (keyword (and
                    init-word
                    (string-match-p "^#\\+" init-word)
-                   (org-extra-complete-mode-trim-keyword init-word))))
+                   (org-extra-complete-mode-trim-keyword init-word)))
+         (built-completions (pcomplete-completions)))
     (cond ((seq-find (lambda (it)
                        (equal (org-extra-complete-strip-props
                                (if (listp it)
@@ -1719,30 +1764,34 @@ Default value for separator is `:\s'."
                        (cdr (assoc keyword items)))
                       (org-extra-complete-get-prop keyword :separator))
                      ""))))
-          ((looking-back "#\\+\\([a-z_:-]+\\)[\s\t]*" 0)
-           (let ((prefix (org-extra-complete-mode-trim-keyword
-                          init-word))
-                 (parts)
-                 (key)
-                 (rest)
-                 (separator))
-             (setq parts (org-extra-complete-alist
-                          (seq-filter
-                           (lambda (it)
-                             (when-let ((str (if (listp it)
-                                                 (car it)
-                                               it)))
-                               (string-prefix-p prefix str)))
-                           items)))
-             (setq key (pop parts))
-             (setq separator (org-extra-complete-get-prop key :separator))
-             (setq key (if (equal key "(ref)")
-                           (org-extra-complete-mode-trim-keyword key)
-                         (concat "#+" (org-extra-complete-mode-trim-keyword key)
-                                 ": ")))
-             (setq rest (or (org-extra-complete-map-values parts separator) ""))
-             (skip-chars-backward "\s\t")
-             (org-extra-complete-insert (concat key rest))))
+                     ;; ((looking-back "#\\+\\([a-z_:-]+\\)[\s\t]*" 0)
+                     ;;  (let ((prefix (org-extra-complete-mode-trim-keyword
+                     ;;                 init-word))
+                     ;;        (parts)
+                     ;;        (key)
+                     ;;        (rest)
+                     ;;        (separator))
+                     ;;    (setq parts (org-extra-complete-alist
+                     ;;                 (seq-filter
+                     ;;                  (lambda (it)
+                     ;;                    (when-let ((str (if (listp it)
+                     ;;                                        (car it)
+                     ;;                                      it)))
+                     ;;                      (string-prefix-p prefix str)))
+                     ;;                  items)))
+                     ;;    (setq key (pop parts))
+                     ;;    (setq separator (org-extra-complete-get-prop key :separator))
+                     ;;    (setq key (if (equal key "(ref)")
+                     ;;                  (org-extra-complete-mode-trim-keyword key)
+                     ;;                (concat "#+" (org-extra-complete-mode-trim-keyword key)
+                     ;;                        ": ")))
+                     ;;    (setq rest (or (org-extra-complete-map-values parts separator) ""))
+                     ;;    (skip-chars-backward "\s\t")
+                     ;;    (org-extra-complete-insert (concat key rest))))
+          (built-completions
+           (let ((w (completing-read "Completion: "
+                                     built-completions)))
+             (insert w)))
           ((and (region-active-p)
                 (use-region-p))
            (let ((reg (org-extra-complete-get-region))
@@ -1798,6 +1847,32 @@ Default value for separator is `:\s'."
                           key
                           "\s"
                           (org-extra-complete-preselect key value))))))))
+
+;;;###autoload (autoload 'org-extra-complete-structure-template "org-extra-complete" nil t)
+(transient-define-prefix org-extra-complete-structure-template ()
+  [:setup-children
+   (lambda (&rest _argsn)
+     (mapcar
+      (apply-partially #'transient-parse-suffix
+                       transient--prefix)
+      (mapcar
+       (lambda (it)
+         (let* ((key (car it))
+                (value (cdr it))
+                (sym))
+           (setq sym (make-symbol (concat
+                                   "org-extra-complete--template-alist-insert-"
+                                   value)))
+           (funcall #'fset
+                    sym
+                    (lambda ()
+                      (interactive)
+                      (org-extra-complete-insert (org-extra-complete-block-type
+                                                  value))))
+           (list key value sym)))
+       org-structure-template-alist)))]
+  (interactive)
+  (transient-setup #'org-extra-complete-structure-template))
 
 ;;;###autoload
 (defun org-extra-complete ()
@@ -1861,7 +1936,7 @@ Default value for separator is `:\s'."
                        (concat
                         (org-extra-complete-normalize-keyword option separator)
                         value)))))))
-          ((org-extra-complete-line-empty-p)
+          ((zerop (length (org-extra-complete-line-get-line-words)))
            (let ((parts (org-extra-complete-alist
                          (org-extra-complete-get-completions-alist)))
                  (key)
@@ -1870,15 +1945,17 @@ Default value for separator is `:\s'."
                  (separator))
              (setq opt (org-extra-complete-mode-trim-keyword (pop parts)))
              (setq separator (org-extra-complete-get-prop opt :separator))
-             (setq key (if (string-match-p "^begin" opt)
-                           (concat "#+" opt)
-                         (if (equal opt "(ref)")
-                             ""
-                           (concat "#+" opt ":"))))
-             (setq rest (org-extra-complete-map-values parts separator))
-             (org-extra-complete-insert
-              (string-join (list key (or rest ""))
-                           "\s"))))
+             (cond ((and (string-prefix-p "begin_" opt) parts)
+                    (org-extra-complete-insert (string-join parts "")))
+                   (t (setq key (if (string-match-p "^begin" opt)
+                                    (concat "#+" opt)
+                                  (if (equal opt "(ref)")
+                                      ""
+                                    (concat "#+" opt ":"))))
+                      (setq rest (org-extra-complete-map-values parts separator))
+                      (org-extra-complete-insert
+                       (string-join (list key (or rest ""))
+                                    "\s"))))))
           (t
            (org-extra-complete-keyword
             (org-extra-complete-get-completions-alist))))))
