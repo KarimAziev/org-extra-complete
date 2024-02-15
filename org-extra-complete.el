@@ -85,11 +85,10 @@ except that ] is never special and \ quotes ^, - or \ (but
         (cons a b)))))
 
 (defun org-extra-complete-bounds-of-region-or-chars (chars)
-  "Return bounds of active region or bounds of thing at point that match CHARS.
+  "Return bounds of region or by CHARS if no region is active.
 
-CHARS is like the inside of a [...] in a regular expression
-except that ] is never special and \ quotes ^, - or \ (but
- not at the end of a range; quoting is never needed there)."
+Argument CHARS is a string specifying characters to include, similar to a
+regular expression character class."
   (if (use-region-p)
       (cons (region-beginning) (region-end))
     (org-extra-complete-bounds-by-chars chars)))
@@ -1320,7 +1319,7 @@ selected color."
   "Complete name for src block."
   (let ((suggestion
          (save-excursion
-           (when (looking-at "[\s\t]?+\n#\\+")
+           (when (looking-at "[\s\t]*\n#\\+")
              (forward-line)
              (org-extra-complete-forward-org-keywords)
              (when-let* ((params
@@ -1497,31 +1496,45 @@ In other cases return PARTS."
   (cond ((and (listp parts)
               (not (functionp parts)))
          (mapconcat
-          (lambda (it) (if (and it (listp it))
-                      (string-join (flatten-list it) "")
-                    (format "%s" it)))
+          (lambda (it)
+            (if (and it (listp it))
+                (string-join (flatten-list it) "")
+              (format "%s" it)))
           parts (or separator "\s")))
         ((functionp parts)
          (funcall parts))
         (t parts)))
 
+(defun org-extra-complete--find-tag (tag items)
+  "Find the first item in ITEMS matching TAG, stripping text properties.
+
+Argument TAG is the tag to find in ITEMS.
+
+Argument ITEMS is a list of strings or cons cells to search through."
+  (seq-find (lambda (cell)
+              (if (stringp cell)
+                  (org-extra-complete-strip-props cell)
+                (equal tag (org-extra-complete-strip-props (car cell)))))
+            items))
+
 (defun org-extra-complete-option-variants (it items)
-  "Find IT in ITEMS."
-  (let ((tag (org-extra-complete-mode-trim-keyword it)))
-    (seq-find (lambda (cell)
-                (if (stringp cell)
-                    (org-extra-complete-strip-props cell)
-                  (equal tag (org-extra-complete-strip-props (car cell)))))
-              items)))
+  "Find matching item in ITEMS for trimmed and stripped keyword IT.
+
+Argument IT is the keyword to be completed.
+
+Argument ITEMS is a list of possible completions for IT."
+  (org-extra-complete--find-tag (org-extra-complete-mode-trim-keyword it)
+                                items))
 
 (defun org-extra-complete-find-keyword-value (it items)
-  "Find IT in ITEMS."
-  (let ((tag (org-extra-complete-strip-props it)))
-    (seq-find (lambda (cell)
-                (if (stringp cell)
-                    (org-extra-complete-strip-props cell)
-                  (equal tag (org-extra-complete-strip-props (car cell)))))
-              items)))
+  "Find and return the first matching keyword value from ITEMS.
+
+Argument IT is the item to find in ITEMS.
+
+Argument ITEMS is a list of items or pairs where the first element is
+considered."
+  (org-extra-complete--find-tag (org-extra-complete-strip-props it)
+                                items))
 
 (defun org-extra-complete-eval-string (str)
   "Read and evaluate all forms in STR.
