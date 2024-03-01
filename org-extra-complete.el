@@ -147,13 +147,13 @@ except that ] is never special and \ quotes ^, - or \ (but
     (string-join (reverse results) "")))
 
 (defvar org-extra-complete-browse-url-protocol-regex
-  "\\(\\(http[s]?://\\(www\\.\\)?\\)\\|git@\\|file:/~?+\\)")
+  "\\(\\(http[s]?://\\(www\\.\\)?\\)\\|git@\\|file:/\\(?:~?/\\)+\\)")
 
 (defvar org-extra-complete-browse-url-regex
   (concat
    "\\("
    org-extra-complete-browse-url-protocol-regex
-   "\\([a-z-0-9]+\\(\\(:[0-9]*\\)\\|\\.[a-z]+\\)+/?[a-z]?[^\\];\s\t\n\r\f|]*[a-z-0-9]+\\)"
+   "\\([a-z0-9-]+\\(\\(:[0-9]*\\)\\|\\.[a-z]+\\)+/?[a-z]?[^\\];\s\t\n\r\f|]*[a-z0-9-]+\\)"
    "\\)")
   "Regexp with protocols.")
 
