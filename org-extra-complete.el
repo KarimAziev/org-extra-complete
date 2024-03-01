@@ -1869,7 +1869,7 @@ Default value for separator is `:\s'."
    (lambda (&rest _argsn)
      (mapcar
       (apply-partially #'transient-parse-suffix
-                       transient--prefix)
+                       (oref transient--prefix command))
       (mapcar
        (lambda (it)
          (let* ((key (car it))
