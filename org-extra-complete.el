@@ -38,6 +38,8 @@
 
 ;;; Code:
 
+(require 'transient)
+
 
 (require 'org)
 (require 'ox)
