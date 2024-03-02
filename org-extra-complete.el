@@ -1885,7 +1885,8 @@ Default value for separator is `:\s'."
                       (org-extra-complete-insert (org-extra-complete-block-type
                                                   value))))
            (list key value sym)))
-       org-structure-template-alist)))]
+       org-structure-template-alist)))
+   :class transient-column]
   (interactive)
   (transient-setup #'org-extra-complete-structure-template))
 
