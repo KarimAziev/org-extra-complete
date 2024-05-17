@@ -1006,79 +1006,232 @@ Return string with label and url, divided with space."
     (:id ":file-ext"
          :description "File extension")))
 
+
 (defvar org-extra-complete-buffer-settings-plists
-  `((:id "ARCHIVE" :description "archive location of the agenda file (~org-archive-location~)")
-    (:id "CATEGORY" :description "category of the agenda file, which applies to the entire document")
-    (:id "COLUMNS" :description "default format for columns view")
-    (:id "CONSTANTS" :description "constants for table formulas ~org-table-formula-constants-local~ ~org-table-formula-constants~")
-    (:id "FILETAGS" :description "tags that all entries in the file inherit from, including the top-level entries"
-         :sublist org-extra-complete-read-tag)
-    (:id "LINK" :description "Each line specifies one abbreviation for is ~org-link-abbrev-alist~."
-         :sublist org-extra-complete-read-link)
-    (:id "PRIORITIES" :description "sets limits and the default for the priorities. All three must be either letters A--Z or numbers 0--9.  The highest priority must have a lower ASCII number than the lowest priority")
-    (:id "PROPERTY" :description "sets a default inheritance value for entries in the current buffer, most useful for specifying the allowed values of a property"
-         :sublist org-extra-complete-read-property)
-    (:id "SETUPFILE" :description "The setup file or a URL pointing to such file for additional in-buffer settings"
-         :sublist org-extra-complete-read-file)
-    (:id "TAGS" :description "~org-tag-alist~ specify the valid tags in this file"
-         :sublist org-extra-complete-read-tag)
-    (:id "LANGUAGE" :description "(~org-export-default-language~)")
-    (:id "TODO" :description "~org-todo-keywords-1~ set the TODO keywords and their interpretation in the current file")
-    (:id "STARTUP" :description "Startup options Org uses when first visiting a file"
-         :sublist ((:id "overview"	:description "Top-level headlines only." :group 0)
-                   (:id "content" :description "All headlines." :group 0)
-                   (:id "showall" :description "No folding on any entry." :group 0)
-                   (:id "show2levels" :description "Headline levels 1-2." :group 0)
-                   (:id "show3levels" :description "Headline levels 1-3." :group 0)
-                   (:id "show4levels" :description "Headline levels 1-4." :group 0)
-                   (:id "show5levels" :description "Headline levels 1-5." :group 0)
-                   (:id "showeverything" :description "Show even drawer contents." :group 0)
-                   (:id "indent" :description "Start with Org Indent mode turned on." :group 1)
-                   (:id "noindent" :description "Start with Org Indent mode turned off." :group 1)
-                   (:id "num" :description "~org-startup-numerated~ Start with Org num mode turned on." :group 2)
-                   (:id "nonum" :description "~org-startup-numerated~ Start with Org num mode turned off." :group 2)
-                   (:id "align" :description "~org-startup-align-all-tables~ Align all tables." :group 3)
-                   (:id "noalign" :description "~org-startup-align-all-tables~ Do not align tables on startup." :group 3)
-                   (:id "inlineimages" :description "~org-startup-with-inline-images~ Show inline images." :group 4)
-                   (:id "noinlineimages" :description "~org-startup-with-inline-images~ Do not show inline images on startup." :group 4)
-                   (:id "logdone" :description "~org-log-done~ Record a timestamp when an item is marked as done." :group 5)
-                   (:id "lognotedone" :description "Record timestamp and a note when DONE." :group 5)
-                   (:id "nologdone" :description "Do not record when items are marked as done." :group 5)
-                   (:id "logrepeat" :description "~org-log-repeat~ Record a time when reinstating a repeating item." :group 5)
-                   (:id "lognoterepeat" :description "Record a note when reinstating a repeating item." :group 5)
-                   (:id "nologrepeat" :description "Do not record when reinstating repeating item." :group 5)
-                   (:id "lognoteclock-out" :description "~org-log-note-clock-out~ Record a note when clocking out." :group 5)
-                   (:id "nolognoteclock-out" :description "Do not record a note when clocking out." :group 5)
-                   (:id "logreschedule" :description "Record a timestamp when scheduling time changes." :group 5)
-                   (:id "lognotereschedule" :description "Record a note when scheduling time changes." :group 5)
-                   (:id "nologreschedule" :description "Do not record when a scheduling date changes." :group 5)
-                   (:id "logredeadline" :description "Record a timestamp when deadline changes." :group 5)
-                   (:id "lognoteredeadline" :description "Record a note when deadline changes." :group 5)
-                   (:id "nologredeadline" :description "Do not record when a deadline date changes." :group 5)
-                   (:id "logrefile" :description "Record a timestamp when refiling." :group 5)
-                   (:id "lognoterefile" :description "Record a note when refiling." :group 5)
-                   (:id "nologrefile" :description "Do not record when refiling." :group 5)
-                   (:id "hidestars" :description "~org-hide-leading-stars~ Make all but one of the stars starting a headline invisible." :group 6)
-                   (:id "showstars" :description "Show all stars starting a headline." :group 6)
-                   (:id "indent" :description "Virtual indentation according to outline level." :group 6)
-                   (:id "noindent" :description "No virtual indentation according to outline level." :group 6)
-                   (:id "odd" :description "~org-odd-levels-only~ Allow only odd outline levels (1, 3, …)." :group 6)
-                   (:id "oddeven" :description "Allow all outline levels." :group 6)
-                   (:id "customtime" :description "~org-put-time-stamp-overlays~ ~org-time-stamp-overlay-formats~ Overlay custom time format." :group 7)
-                   (:id "constcgs" :description "‘constants.el’ should use the c-g-s unit system." :group 8)
-                   (:id "constSI" :description "‘constants.el’ should use the SI unit system." :group 8)
-                   (:id "fninline" :description "~org-footnote-define-inline~ Define footnotes inline." :group 9)
-                   (:id "fnnoinline" :description "Define footnotes in separate section." :group 9)
-                   (:id "fnlocal" :description "Define footnotes near first reference, but not inline." :group 9)
-                   (:id "fnprompt" :description "Prompt for footnote labels." :group 9)
-                   (:id "fnauto" :description "Create ‘[fn:1]’-like labels automatically (default)." :group 9)
-                   (:id "fnconfirm" :description "Offer automatic label for editing or confirmation." :group 9)
-                   (:id "fnadjust" :description "Automatically renumber and sort footnotes." :group 9)
-                   (:id "nofnadjust" :description "Do not renumber and sort automatically." :group 9)
-                   (:id "hideblocks" :description "Hide all begin/end blocks on startup." :group 10)
-                   (:id "nohideblocks" :description "Do not hide blocks on startup." :group 10)
-                   (:id "entitiespretty" :description "Show entities as UTF-8 characters where possible." :group 11)
-                   (:id "entitiesplain" :description "Leave entities plain." :group 11)))))
+  `((:id "ARCHIVE"
+     :description "archive location of the agenda file (~org-archive-location~)")
+    (:id "CATEGORY"
+     :description
+     "category of the agenda file, which applies to the entire document")
+    (:id "COLUMNS"
+     :description "default format for columns view")
+    (:id "CONSTANTS"
+     :description
+     "constants for table formulas ~org-table-formula-constants-local~ ~org-table-formula-constants~")
+    (:id "FILETAGS"
+     :description
+     "tags that all entries in the file inherit from, including the top-level entries"
+     :sublist org-extra-complete-read-tag)
+    (:id "LINK"
+     :description
+     "Each line specifies one abbreviation for is ~org-link-abbrev-alist~."
+     :sublist org-extra-complete-read-link)
+    (:id "PRIORITIES"
+     :description
+     "sets limits and the default for the priorities. All three must be either letters A--Z or numbers 0--9.  The highest priority must have a lower ASCII number than the lowest priority")
+    (:id "PROPERTY"
+     :description
+     "sets a default inheritance value for entries in the current buffer, most useful for specifying the allowed values of a property"
+     :sublist org-extra-complete-read-property)
+    (:id "SETUPFILE"
+     :description
+     "The setup file or a URL pointing to such file for additional in-buffer settings"
+     :sublist org-extra-complete-read-file)
+    (:id "TAGS"
+     :description "~org-tag-alist~ specify the valid tags in this file"
+     :sublist org-extra-complete-read-tag)
+    (:id "LANGUAGE"
+     :description "(~org-export-default-language~)")
+    (:id "TODO"
+     :description
+     "~org-todo-keywords-1~ set the TODO keywords and their interpretation in the current file")
+    (:id "STARTUP"
+     :description "Startup options Org uses when first visiting a file"
+     :sublist ((:id "overview"
+                :description "Top-level headlines only."
+                :group 0)
+               (:id "content"
+                :description "All headlines."
+                :group 0)
+               (:id "showall"
+                :description "No folding on any entry."
+                :group 0)
+               (:id "show2levels"
+                :description "Headline levels 1-2."
+                :group 0)
+               (:id "show3levels"
+                :description "Headline levels 1-3."
+                :group 0)
+               (:id "show4levels"
+                :description "Headline levels 1-4."
+                :group 0)
+               (:id "show5levels"
+                :description "Headline levels 1-5."
+                :group 0)
+               (:id "showeverything"
+                :description "Show even drawer contents."
+                :group 0)
+               (:id "indent"
+                :description "Start with Org Indent mode turned on."
+                :group 1)
+               (:id "noindent"
+                :description "Start with Org Indent mode turned off."
+                :group 1)
+               (:id "num"
+                :description
+                "~org-startup-numerated~ Start with Org num mode turned on."
+                :group 2)
+               (:id "nonum"
+                :description
+                "~org-startup-numerated~ Start with Org num mode turned off."
+                :group 2)
+               (:id "align"
+                :description
+                "~org-startup-align-all-tables~ Align all tables."
+                :group 3)
+               (:id "noalign"
+                :description
+                "~org-startup-align-all-tables~ Do not align tables on startup."
+                :group 3)
+               (:id "inlineimages"
+                :description
+                "~org-startup-with-inline-images~ Show inline images."
+                :group 4)
+               (:id "noinlineimages"
+                :description
+                "~org-startup-with-inline-images~ Do not show inline images on startup."
+                :group 4)
+               (:id "logdone"
+                :description
+                "~org-log-done~ Record a timestamp when an item is marked as done."
+                :group 5)
+               (:id "lognotedone"
+                :description "Record timestamp and a note when DONE."
+                :group 5)
+               (:id "nologdone"
+                :description "Do not record when items are marked as done."
+                :group 5)
+               (:id "logrepeat"
+                :description
+                "~org-log-repeat~ Record a time when reinstating a repeating item."
+                :group 5)
+               (:id "lognoterepeat"
+                :description
+                "Record a note when reinstating a repeating item."
+                :group 5)
+               (:id "nologrepeat"
+                :description
+                "Do not record when reinstating repeating item."
+                :group 5)
+               (:id "lognoteclock-out"
+                :description
+                "~org-log-note-clock-out~ Record a note when clocking out."
+                :group 5)
+               (:id "nolognoteclock-out"
+                :description "Do not record a note when clocking out."
+                :group 5)
+               (:id "logreschedule"
+                :description
+                "Record a timestamp when scheduling time changes."
+                :group 5)
+               (:id "lognotereschedule"
+                :description "Record a note when scheduling time changes."
+                :group 5)
+               (:id "nologreschedule"
+                :description "Do not record when a scheduling date changes."
+                :group 5)
+               (:id "logredeadline"
+                :description "Record a timestamp when deadline changes."
+                :group 5)
+               (:id "lognoteredeadline"
+                :description "Record a note when deadline changes."
+                :group 5)
+               (:id "nologredeadline"
+                :description "Do not record when a deadline date changes."
+                :group 5)
+               (:id "logrefile"
+                :description "Record a timestamp when refiling."
+                :group 5)
+               (:id "lognoterefile"
+                :description "Record a note when refiling."
+                :group 5)
+               (:id "nologrefile"
+                :description "Do not record when refiling."
+                :group 5)
+               (:id "hidestars"
+                :description
+                "~org-hide-leading-stars~ Make all but one of the stars starting a headline invisible."
+                :group 6)
+               (:id "showstars"
+                :description "Show all stars starting a headline."
+                :group 6)
+               (:id "indent"
+                :description
+                "Virtual indentation according to outline level."
+                :group 6)
+               (:id "noindent"
+                :description
+                "No virtual indentation according to outline level."
+                :group 6)
+               (:id "odd"
+                :description
+                "~org-odd-levels-only~ Allow only odd outline levels (1, 3, …)."
+                :group 6)
+               (:id "oddeven"
+                :description "Allow all outline levels."
+                :group 6)
+               (:id "customtime"
+                :description
+                "~org-put-time-stamp-overlays~ ~org-time-stamp-overlay-formats~ Overlay custom time format."
+                :group 7)
+               (:id "constcgs"
+                :description
+                "‘constants.el’ should use the c-g-s unit system."
+                :group 8)
+               (:id "constSI"
+                :description "‘constants.el’ should use the SI unit system."
+                :group 8)
+               (:id "fninline"
+                :description
+                "~org-footnote-define-inline~ Define footnotes inline."
+                :group 9)
+               (:id "fnnoinline"
+                :description "Define footnotes in separate section."
+                :group 9)
+               (:id "fnlocal"
+                :description
+                "Define footnotes near first reference, but not inline."
+                :group 9)
+               (:id "fnprompt"
+                :description "Prompt for footnote labels."
+                :group 9)
+               (:id "fnauto"
+                :description
+                "Create ‘[fn:1]’-like labels automatically (default)."
+                :group 9)
+               (:id "fnconfirm"
+                :description
+                "Offer automatic label for editing or confirmation."
+                :group 9)
+               (:id "fnadjust"
+                :description "Automatically renumber and sort footnotes."
+                :group 9)
+               (:id "nofnadjust"
+                :description "Do not renumber and sort automatically."
+                :group 9)
+               (:id "hideblocks"
+                :description "Hide all begin/end blocks on startup."
+                :group 10)
+               (:id "nohideblocks"
+                :description "Do not hide blocks on startup."
+                :group 10)
+               (:id "entitiespretty"
+                :description
+                "Show entities as UTF-8 characters where possible."
+                :group 11)
+               (:id "entitiesplain"
+                :description "Leave entities plain."
+                :group 11)))))
 
 (defun org-extra-complete-read-web-color ()
   "Show a list of all W3C web colors for use in CSS.
@@ -1389,26 +1542,26 @@ selected color."
                  :description (concat "begin_" (cdr it))
                  :sublist (lambda ()
                             (org-extra-complete-block-type (cdr it)))))
-              org-structure-template-alist)
+       org-structure-template-alist)
     (:id "html"
-         :description "html block"
-         :sublist org-extra-complete-html)
+     :description "html block"
+     :sublist org-extra-complete-html)
     (:id "caption"
-         :description "Caption"
-         :sublist (lambda ()
-                    (read-string "CAPTION ")))
+     :description "Caption"
+     :sublist (lambda ()
+                (read-string "CAPTION ")))
     (:id "name"
-         :description "Name"
-         :sublist org-extra-complete-name)
+     :description "Name"
+     :sublist org-extra-complete-name)
     (:id "call"
-         :description "Call"
-         :sublist org-extra-complete-call)
+     :description "Call"
+     :sublist org-extra-complete-call)
     (:id "(ref)"
-         :description "Reference "
-         :sublist org-extra-complete-insert-ref-link)
+     :description "Reference"
+     :sublist org-extra-complete-insert-ref-link)
     (:id "include"
-         :description "Include content of file"
-         :sublist org-extra-complete-read-file)))
+     :description "Include content of file"
+     :sublist org-extra-complete-read-file)))
 
 (defvar org-extra-complete-completions-plist-vars
   '(org-extra-complete-export-settings-plists
