@@ -1222,15 +1222,15 @@ selected color."
     (:id "HTML_HEAD_EXTRA"
          :description
          "More arbitrary lines for appending to the HTML document's head (~org-html-head-extra~)"
-         :sublist (,org-extra-complete-html-headers))
+         :sublist (,@org-extra-complete-html-headers))
     (:id "HTML_HEAD"
          :description
          "Arbitrary lines for appending to the HTML document's head (org-html-head)"
-         :sublist (,org-extra-complete-html-headers))
+         :sublist (,@org-extra-complete-html-headers))
     (:id "ATTR_HTML"
          :description
          "More arbitrary lines for appending to the HTML document's head (~org-html-head-extra~)"
-         :sublist (,org-extra-complete-html-headers))
+         :sublist (,@org-extra-complete-html-headers))
     (:id "KEYWORDS"
          :description "HTML meta tags")
     (:id "HTML_MATHJAX"
