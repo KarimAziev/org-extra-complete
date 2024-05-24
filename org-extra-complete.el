@@ -1470,6 +1470,24 @@ selected color."
         (when (symbolp (nth 1 sexp))
           (org-extra-complete-elisp-unquote (car (flatten-list (seq-drop sexp 1))))))))
 
+(defun org-extra-complete--imenu-get-candidates-from (alist)
+  "Create a list of (key . value) from imenu ALIST."
+  (require 'imenu)
+  (when (fboundp 'imenu--subalist-p)
+    (cl-mapcan
+     (lambda (elm)
+       (if (imenu--subalist-p elm)
+           (org-extra-complete--imenu-get-candidates-from
+            (cl-loop for (e . v) in (cdr elm) collect
+                     (cons e (if (integerp v)
+                                 (copy-marker v) v))))
+         (let ((key (car elm)))
+           (list (cons key
+                       (cons key (if (overlayp (cdr elm))
+                                     (overlay-start (cdr elm))
+                                   (cdr elm))))))))
+     alist)))
+
 (defun org-extra-complete-name ()
   "Complete name for src block."
   (let ((suggestion
@@ -1502,12 +1520,16 @@ selected color."
                                (when-let ((sym
                                            (org-extra-complete-elisp-src-name)))
                                  (when (symbolp sym)
-                                   (symbol-name sym))))))))
-                     (ignore-errors (imenu--make-index-alist t))
-                     (if (and imenu--index-alist
+                                   (symbol-name sym)))))))
+                         (items (progn
+                                  (ignore-errors (imenu--make-index-alist t))
+                                  (org-extra-complete--imenu-get-candidates-from
+                                   (remove (assoc "*Rescan*" imenu--index-alist)
+                                           imenu--index-alist)))))
+                     (if (and items
                               extra)
-                         (append (list extra) imenu--index-alist)
-                       (or imenu--index-alist extra))))))))))
+                         (append (list extra) items)
+                       (or items extra))))))))))
     (if (and suggestion (listp suggestion))
         (completing-read "NAME\s" suggestion)
       (read-string "NAME\s" suggestion))))
