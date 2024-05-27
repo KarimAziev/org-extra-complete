@@ -1,4 +1,4 @@
-;;; org-extra-complete.el --- Configure extra complete -*- lexical-binding: t -*-
+;;; org-extra-complete.el --- Completions for org-mode -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2022 Karim Aziiev <karim.aziiev@gmail.com>
 
@@ -25,8 +25,6 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-
-;; This file configures operations with extra complete
 
 ;; Commands
 
