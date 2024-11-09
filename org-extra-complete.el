@@ -51,13 +51,13 @@
   "Move by calling FN N times.
 Return new position if changed, nil otherwise."
   (unless n (setq n 1))
-  (when-let ((str-start (nth 8 (syntax-ppss (point)))))
+  (when-let* ((str-start (nth 8 (syntax-ppss (point)))))
     (goto-char str-start))
   (let ((init-pos (point))
         (pos)
         (count n))
     (while (and (not (= count 0))
-                (when-let ((end (ignore-errors
+                (when-let* ((end (ignore-errors
                                   (funcall fn)
                                   (point))))
                   (unless (= end (or pos init-pos))
@@ -109,7 +109,7 @@ except that ] is never special and \ quotes ^, - or \ (but
 Optional argument CHARS is like the inside of a [...] in a regular expression
 except that ] is never special and \ quotes ^, - or \ (but
  not at the end of a range; quoting is never needed there)"
-  (when-let ((bounds (org-extra-complete-get-bounds chars)))
+  (when-let* ((bounds (org-extra-complete-get-bounds chars)))
     (buffer-substring-no-properties (car bounds)
                                     (cdr bounds))))
 
@@ -173,7 +173,7 @@ except that ] is never special and \ quotes ^, - or \ (but
                                (insert link)
                                (org-mode)
                                (goto-char (point-min))
-                               (when-let ((props
+                               (when-let* ((props
                                            (cadr (org-element-link-parser))))
                                  (plist-get props :raw-link))))
                          link)))
@@ -262,7 +262,7 @@ Default value of SEPARATOR is space."
                      (region-end)))
     (setq str
           (string-join
-           (if-let ((current-word (org-extra-complete-get-word
+           (if-let* ((current-word (org-extra-complete-get-word
                                    "-*_~$A-Za-z0-9:#\\+")))
                (progn
                  (if (string-prefix-p current-word item)
@@ -282,7 +282,7 @@ Default value of SEPARATOR is space."
   (let ((result)
         (keyword))
     (while (setq keyword (pop keywords))
-      (when-let ((value (plist-get plist keyword)))
+      (when-let* ((value (plist-get plist keyword)))
         (unless (null value)
           (setq result (append result (list keyword value))))))
     result))
@@ -441,7 +441,7 @@ Return string with label and url, divided with space."
 
 (defun org-extra-complete-goto-matching-closed-block (&optional keyword)
   "Jump to matching for KEYWORD closed block."
-  (when-let ((type (downcase (replace-regexp-in-string
+  (when-let* ((type (downcase (replace-regexp-in-string
                               "^#\\+\\|:[\s\t\n]*$" ""
                               (or keyword
                                   (org-extra-complete-get-word))))))
@@ -599,7 +599,7 @@ Return string with label and url, divided with space."
 
 (defun org-extra-complete-insert-ref-link ()
   "Complete org reference."
-  (when-let ((ref (format "(%s)"
+  (when-let* ((ref (format "(%s)"
                           (completing-read
                            "Ref:\s"
                            (org-extra-complete-babel-get-all-src-refs)))))
@@ -1429,7 +1429,7 @@ selected color."
   (let ((prev-pos))
     (while (and (or (null prev-pos)
                     (< prev-pos (point)))
-                (when-let ((sexp (sexp-at-point)))
+                (when-let* ((sexp (sexp-at-point)))
                   (and
                    (listp sexp)
                    (memq (car sexp)
@@ -1440,7 +1440,7 @@ selected color."
       (setq prev-pos (progn
                        (org-extra-complete-move-with 'forward-sexp 2)
                        (org-extra-complete-move-with 'backward-list)))))
-  (when-let ((sexp (sexp-at-point)))
+  (when-let* ((sexp (sexp-at-point)))
     (when (and
            (listp sexp)
            (memq (car sexp)
@@ -1515,7 +1515,7 @@ selected color."
                           (progn
                             (pcase src-mode
                               ('emacs-lisp-mode
-                               (when-let ((sym
+                               (when-let* ((sym
                                            (org-extra-complete-elisp-src-name)))
                                  (when (symbolp sym)
                                    (symbol-name sym)))))))
@@ -1643,7 +1643,7 @@ if the current line is empty."
                                      (line-end-position)
                                      t 1))
           (when (re-search-forward "#\\+\\(begin\\|end\\)_src\\($\\|[\s\f\t\n\r\v]\\)" nil t 1)
-            (when-let ((word (match-string-no-properties 1))
+            (when-let* ((word (match-string-no-properties 1))
                        (end (match-beginning 0)))
               (setq word (downcase word))
               (when (string= word "end")
@@ -1659,7 +1659,7 @@ if the current line is empty."
 
 (defun org-extra-complete-inside-src-code-p ()
   "Return t if point located inside body of src block."
-  (when-let ((info (org-extra-complete-src-block-params))
+  (when-let* ((info (org-extra-complete-src-block-params))
              (pos (point)))
     (and (>= pos (nth 1 info))
          (<= pos (nth 2 info)))))
@@ -1841,7 +1841,7 @@ If ITEM is string, return it."
                                (car (org-extra-complete-eval-string var))
                              (let ((sym (intern var)))
                                (when (boundp sym)
-                                 (if-let ((minw
+                                 (if-let* ((minw
                                            (minibuffer-selected-window)))
                                      (with-selected-window minw
                                        (buffer-local-value
@@ -2078,7 +2078,7 @@ Default value for separator is `:\s'."
          (inside-code (org-extra-complete-inside-src-code-p))
          (suboptions))
     (cond ((and inside-code (looking-back "<<" 0))
-           (when-let ((name (completing-read
+           (when-let* ((name (completing-read
                              "Include:\s"
                              (org-extra-complete-search-named-blocks))))
              (if (looking-at ">>")
