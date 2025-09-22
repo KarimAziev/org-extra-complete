@@ -1242,11 +1242,14 @@ selected color."
                        (mapcar
                         (lambda (cell)
                           (let ((color (car cell)))
-                            (propertize (seq-copy (cdr cell)) 'face
-                                        (list :background
-                                              (cdr
-                                               (assoc color
-                                                      shr-color-html-colors-alist))))))
+                            (propertize
+                             (seq-copy (cdr cell))
+                             'face
+                             (list
+                              :background
+                              (cdr
+                               (assoc color
+                                      shr-color-html-colors-alist))))))
                         shr-color-html-colors-alist))
     (read-string "Color: ")))
 
@@ -1434,8 +1437,7 @@ selected color."
                    (listp sexp)
                    (memq (car sexp)
                          '(eval-and-compile
-                            require
-                            eval-when-compile
+                            require eval-when-compile
                             declare-function)))))
       (setq prev-pos (progn
                        (org-extra-complete-move-with 'forward-sexp 2)
@@ -1445,28 +1447,26 @@ selected color."
            (listp sexp)
            (memq (car sexp)
                  '(eval-and-compile
-                    require
-                    eval-when-compile
+                    require eval-when-compile
                     declare-function)))
       (org-extra-complete-move-with 'forward-sexp 2))
     (if (memq (car sexp)
               '(defun defmacro defsubst define-inline define-advice defadvice
-                      define-skeleton define-compilation-mode define-minor-mode
-                      define-global-minor-mode define-globalized-minor-mode
-                      define-derived-mode define-generic-mode ert-deftest
-                      cl-defun cl-defsubst cl-defmacro cl-define-compiler-macro
-                      cl-defgeneric cl-defmethod define-compiler-macro
-                      define-modify-macro defsetf define-setf-expander
-                      define-method-combination defalias cl-flet defun-ivy-read
-                      defhydra
-                      transient-define-suffix
-                      transient-define-prefix defgeneric
-                      defmethod
-                      defun-ivy+ defgroup deftheme
-                      define-widget define-error defface cl-deftype cl-defstruct
-                      deftype defstruct define-condition defpackage defclass))
+                define-skeleton define-compilation-mode define-minor-mode
+                define-global-minor-mode define-globalized-minor-mode
+                define-derived-mode define-generic-mode ert-deftest
+                cl-defun cl-defsubst cl-defmacro cl-define-compiler-macro
+                cl-defgeneric cl-defmethod define-compiler-macro
+                define-modify-macro defsetf define-setf-expander
+                define-method-combination defalias cl-flet defun-ivy-read
+                defhydra transient-define-suffix
+                transient-define-prefix defgeneric
+                defmethod defun-ivy+ defgroup deftheme
+                define-widget define-error defface cl-deftype cl-defstruct
+                deftype defstruct define-condition defpackage defclass))
         (when (symbolp (nth 1 sexp))
-          (org-extra-complete-elisp-unquote (car (flatten-list (seq-drop sexp 1))))))))
+          (org-extra-complete-elisp-unquote (car (flatten-list
+                                                  (seq-drop sexp 1))))))))
 
 (defun org-extra-complete--imenu-get-candidates-from (alist)
   "Create a list of (key . value) from imenu ALIST."
@@ -1736,33 +1736,35 @@ Return the results of all forms as a list."
      (lambda (pl)
        (if (stringp pl)
            pl
-         (let*
-             ((keywords (seq-filter #'keywordp pl))
-              (id (or (plist-get pl :id)
-                      (if (member :value keywords)
-                          (org-extra-complete-stringify
-                           (plist-get pl :value))
-                        pl)))
-              (description (plist-get pl :description))
-              (sublist
-               (if (functionp (plist-get pl :sublist))
-                   (plist-get pl :sublist)
-                 (delete nil
-                         (org-extra-complete-map-plist-completions-to-alist
-                          (plist-get pl :sublist)))))
-              (item (if description
-                        (org-extra-complete-add-props id :description description)
-                      id))
-              (rest (org-extra-complete-plist-pick
-                     (seq-difference keywords '(:value :sublist :id))
-                     pl)))
+         (let* ((keywords (seq-filter #'keywordp pl))
+                (id (or (plist-get pl :id)
+                        (if (member :value keywords)
+                            (org-extra-complete-stringify
+                             (plist-get pl :value))
+                          pl)))
+                (description (plist-get pl :description))
+                (sublist
+                 (if (functionp (plist-get pl :sublist))
+                     (plist-get pl :sublist)
+                   (delete nil
+                           (org-extra-complete-map-plist-completions-to-alist
+                            (plist-get pl :sublist)))))
+                (item (if description
+                          (org-extra-complete-add-props
+                           id :description description)
+                        id))
+                (rest (org-extra-complete-plist-pick
+                       (seq-difference keywords '(:value :sublist
+                                                  :id))
+                       pl)))
            (setq item (apply #'org-extra-complete-add-props id rest))
            (pcase (plist-get pl :value)
              ('boolean (cons item `("t" "nil")))
              ('string
-              `(,item . (lambda () (format "%s"
-                                      (read-string
-                                       ,(format "%s (string): " id))))))
+              `(,item . (lambda ()
+                          (format "%s"
+                           (read-string
+                            ,(format "%s (string): " id))))))
              ('integer `(,item . (lambda ()
                                    (format
                                     "%s" (read-number
@@ -1774,32 +1776,47 @@ Return the results of all forms as a list."
 (defvar org-extra-complete-completion-collection nil)
 
 (defun org-extra-complete-completing-read (prompt collection &optional predicate
-                                               require-match
-                                               initial-input
-                                               hist
-                                               def
-                                               inherit-input-method)
+                                                  require-match initial-input
+                                                  hist def inherit-input-method)
   "Read a string in the minibuffer, with annotated completions.
 COLLECTION should be a list of propertized strings. See
 `org-extra-complete-src-complete-display-fn'.
 PROMPT, PREDICATE, REQUIRE-MATCH, INITIAL-INPUT, HIST, DEF, INHERIT-INPUT-METHOD
 are the same as for `completing-read'."
-  (completing-read
-   prompt
-   (lambda (str pred action)
-     (if (eq action
-             'metadata)
-         `(metadata
-           (annotation-function .
-                                org-extra-complete-src-complete-display-fn))
-       (complete-with-action action collection
-                             str pred)))
-   predicate
-   require-match
-   initial-input
-   hist
-   def
-   inherit-input-method))
+  (let* ((collection-strs (mapcar (lambda (it)
+                                    (cond ((stringp it)
+                                           it)
+                                          ((symbolp it)
+                                           (format "%s" it))
+                                          ((consp it)
+                                           (format "%s"
+                                                   (car it)))))
+                                  collection))
+         (longest
+          (propertize " " 'display
+                      (list 'space :align-to
+                            (apply #'max
+                                   (mapcar #'length collection-strs)))))
+         (annot-fn (lambda (it)
+                     (let ((anottation
+                            (org-extra-complete-src-complete-display-fn
+                             it)))
+                       (concat longest anottation)))))
+    (completing-read
+     prompt
+     (lambda (str pred action)
+       (if (eq action
+               'metadata)
+           `(metadata
+             (annotation-function . ,annot-fn))
+         (complete-with-action action collection
+                               str pred)))
+     predicate
+     require-match
+     initial-input
+     hist
+     def
+     inherit-input-method)))
 
 (defun org-extra-complete-preselect (prompt item)
   "If ITEM is function, call it.
@@ -1952,30 +1969,30 @@ Default value for separator is `:\s'."
                        (cdr (assoc keyword items)))
                       (org-extra-complete-get-prop keyword :separator))
                      ""))))
-                     ;; ((looking-back "#\\+\\([a-z_:-]+\\)[\s\t]*" 0)
-                     ;;  (let ((prefix (org-extra-complete-mode-trim-keyword
-                     ;;                 init-word))
-                     ;;        (parts)
-                     ;;        (key)
-                     ;;        (rest)
-                     ;;        (separator))
-                     ;;    (setq parts (org-extra-complete-alist
-                     ;;                 (seq-filter
-                     ;;                  (lambda (it)
-                     ;;                    (when-let ((str (if (listp it)
-                     ;;                                        (car it)
-                     ;;                                      it)))
-                     ;;                      (string-prefix-p prefix str)))
-                     ;;                  items)))
-                     ;;    (setq key (pop parts))
-                     ;;    (setq separator (org-extra-complete-get-prop key :separator))
-                     ;;    (setq key (if (equal key "(ref)")
-                     ;;                  (org-extra-complete-mode-trim-keyword key)
-                     ;;                (concat "#+" (org-extra-complete-mode-trim-keyword key)
-                     ;;                        ": ")))
-                     ;;    (setq rest (or (org-extra-complete-map-values parts separator) ""))
-                     ;;    (skip-chars-backward "\s\t")
-                     ;;    (org-extra-complete-insert (concat key rest))))
+          ;; ((looking-back "#\\+\\([a-z_:-]+\\)[\s\t]*" 0)
+          ;;  (let ((prefix (org-extra-complete-mode-trim-keyword
+          ;;                 init-word))
+          ;;        (parts)
+          ;;        (key)
+          ;;        (rest)
+          ;;        (separator))
+          ;;    (setq parts (org-extra-complete-alist
+          ;;                 (seq-filter
+          ;;                  (lambda (it)
+          ;;                    (when-let ((str (if (listp it)
+          ;;                                        (car it)
+          ;;                                      it)))
+          ;;                      (string-prefix-p prefix str)))
+          ;;                  items)))
+          ;;    (setq key (pop parts))
+          ;;    (setq separator (org-extra-complete-get-prop key :separator))
+          ;;    (setq key (if (equal key "(ref)")
+          ;;                  (org-extra-complete-mode-trim-keyword key)
+          ;;                (concat "#+" (org-extra-complete-mode-trim-keyword key)
+          ;;                        ": ")))
+          ;;    (setq rest (or (org-extra-complete-map-values parts separator) ""))
+          ;;    (skip-chars-backward "\s\t")
+          ;;    (org-extra-complete-insert (concat key rest))))
           (built-completions
            (let ((w (completing-read "Completion: "
                                      built-completions)))
@@ -1994,7 +2011,8 @@ Default value for separator is `:\s'."
                                                         "\n"
                                                         "#+end_src\n")))
              (forward-line 1)))
-          (t (org-extra-complete-insert (org-extra-complete-insert-ref-link))))))
+          (t (org-extra-complete-insert
+              (org-extra-complete-insert-ref-link))))))
 
 ;;;###autoload
 (defun org-extra-complete-src-headers-args ()
@@ -2004,37 +2022,40 @@ Default value for separator is `:\s'."
         (org-extra-complete-map-plist-completions-to-alist
          org-extra-complete-src-headers-args-plist))
   (let ((case-fold-search t))
-    (cond
-     ((looking-back "\\(#\\+begin_src\\)[\s\t]*" 0)
-      (insert (org-extra-complete-begin-src)))
-     ((looking-back "\\(:[a-z]+\\)[\s\t]+" 0)
-      (if-let* ((preselect (match-string-no-properties 1))
-                (value (cdr (org-extra-complete-find-keyword-value
-                             preselect
-                             org-extra-complete-completion-collection))))
-          (insert (org-extra-complete-preselect preselect value))
-        (insert (read-string (format "Value for %s:\s" preselect)))))
-     ((looking-back ":\\([a-z]*\\)" 0)
-      (when-let* ((prefix (match-string-no-properties 0))
-                  (value (all-completions
-                          prefix (mapcar
-                                  #'car
-                                  org-extra-complete-completion-collection)))
-                  (val (if (> (length value) 1)
-                           (org-extra-complete-completing-read
-                            "Complete:\s" value)
-                         (car value))))
-        (insert (concat (substring-no-properties val (length
-                                                      prefix))
-                        "\s"))))
-     (t (let* ((key (org-extra-complete-completing-read
-                     ""
-                     org-extra-complete-completion-collection))
-               (value (cdr (assoc key org-extra-complete-completion-collection))))
-          (insert (concat (if (looking-back "[\s\t]+" 0) "" "\s")
-                          key
-                          "\s"
-                          (org-extra-complete-preselect key value))))))))
+    (cond ((looking-back "\\(#\\+begin_src\\)[\s\t]*" 0)
+           (insert (org-extra-complete-begin-src)))
+          ((looking-back "\\(:[a-z]+\\)[\s\t]+" 0)
+           (if-let* ((preselect (match-string-no-properties 1))
+                     (value (cdr (org-extra-complete-find-keyword-value
+                                  preselect
+                                  org-extra-complete-completion-collection))))
+               (insert (org-extra-complete-preselect preselect value))
+             (insert (read-string (format "Value for %s:\s" preselect)))))
+          ((looking-back ":\\([a-z]*\\)" 0)
+           (when-let* ((prefix (match-string-no-properties 0))
+                       (value
+                        (all-completions
+                         prefix (mapcar
+                                 #'car
+                                 org-extra-complete-completion-collection)))
+                       (val (if (> (length value) 1)
+                                (org-extra-complete-completing-read
+                                 "Complete:\s" value)
+                              (car value))))
+             (insert (concat (substring-no-properties val (length
+                                                           prefix))
+                             "\s"))))
+          (t
+           (let*
+               ((key (org-extra-complete-completing-read
+                      ""
+                      org-extra-complete-completion-collection))
+                (value (cdr (assoc key
+                                   org-extra-complete-completion-collection))))
+             (insert (concat (if (looking-back "[\s\t]+" 0) "" "\s")
+                             key
+                             "\s"
+                             (org-extra-complete-preselect key value))))))))
 
 ;;;###autoload (autoload 'org-extra-complete-structure-template "org-extra-complete" nil t)
 (transient-define-prefix org-extra-complete-structure-template ()
@@ -2079,8 +2100,8 @@ Default value for separator is `:\s'."
          (suboptions))
     (cond ((and inside-code (looking-back "<<" 0))
            (when-let* ((name (completing-read
-                             "Include:\s"
-                             (org-extra-complete-search-named-blocks))))
+                              "Include:\s"
+                              (org-extra-complete-search-named-blocks))))
              (if (looking-at ">>")
                  (insert name)
                (insert name ">>"))))
@@ -2141,7 +2162,9 @@ Default value for separator is `:\s'."
                                   (if (equal opt "(ref)")
                                       ""
                                     (concat "#+" opt ":"))))
-                      (setq rest (org-extra-complete-map-values parts separator))
+                      (setq rest (org-extra-complete-map-values
+                                  parts
+                                  separator))
                       (org-extra-complete-insert
                        (string-join (list key (or rest ""))
                                     "\s"))))))
