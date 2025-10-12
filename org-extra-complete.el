@@ -400,21 +400,20 @@ Default value of SEPARATOR is space."
                        org-extra-complete-language-history))
          (langs (org-extra-complete-get-all-babel-languages))
          (maxlen (if langs (apply #'max (mapcar #'length langs)) 20))
-         (languages (if hist
-                        (append hist
-                                (seq-difference langs hist))
-                      langs))
+         (languages (delete-dups
+                     (if hist
+                         (append hist
+                                 (seq-difference langs hist))
+                       langs)))
          (annotf (lambda (str)
                    (let ((lang-mode (org-src-get-lang-mode str)))
                      (concat
                       (propertize " " 'display
                                   `(space :align-to
-                                          ,maxlen))
-                      (format " (%s) %s"
-                              lang-mode
-                              (if (fboundp lang-mode)
-                                  ""
-                                "unknown mode")))))))
+                                    ,maxlen))
+                      (if lang-mode
+                          (format "(%s)" lang-mode)
+                        "(unknown mode)"))))))
     (completing-read "Language:\s"
                      (lambda (str pred action)
                        (if (eq action 'metadata)
